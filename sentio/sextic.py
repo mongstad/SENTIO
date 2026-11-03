@@ -1,8 +1,4 @@
-"""Optional soft-sextic numerical core; no runtime, camera or GUI integration.
-
-Issue #6's integration is blocked on the separately owned issue #4. The
-accepted Field implementation remains the linear default and is untouched.
-"""
+"""Optional soft-sextic dynamics, independent of camera and visualization."""
 
 from dataclasses import asdict, dataclass, replace
 import json
@@ -20,7 +16,7 @@ from .field import Field, Parameters
 MODEL = "soft-sextic-verlet-sponge-v1"
 ENVELOPE_RATIO = 4.0
 # Operational ceiling, not a real-time promise: at most 10^6 steps/model s.
-# Runtime integration must reconcile this with issue #4's accepted policy.
+# Broader numeric-control policy remains separately scoped in issue #4.
 MIN_STEP = 1e-6
 MAX_STEP = 1/480
 
@@ -214,7 +210,7 @@ class SexticField(Field):
     def seed_control(self):
         """Explicit researched IC/preset, not sensory-driven formation.
 
-        The future runtime must also disable input coupling and label this action.
+        The runtime also disables input coupling and labels this action.
         """
         self.parameters = Parameters(speed=.3, damping=0, coupling=0)
         self.nonlinear = SexticParameters()
@@ -251,7 +247,7 @@ class SexticField(Field):
     @classmethod
     def load(cls, path):
         # Validate sizes and headers before NumPy allocation, as for schema 1.
-        # No dispatch or changes to the accepted linear loader in this core PR.
+        # Application dispatch lives separately in models.py.
         with zipfile.ZipFile(path) as archive:
             if len(archive.infolist()) != 3 or sum(i.file_size for i in archive.infolist()) > 2_000_000:
                 raise ValueError("invalid or oversized nonlinear checkpoint")

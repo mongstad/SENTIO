@@ -16,8 +16,8 @@ import numpy as np
 
 from . import __version__
 from .camera import V4L2Camera
-from .field import Field
 from .inputs import SYNTHETIC_MODES, luminance_source, synthetic_source
+from .models import MODEL_IDS, create_field, load_field, model_name
 
 
 class EventLog:
@@ -34,7 +34,9 @@ class EventLog:
         record = dict(event=event, utc=datetime.now(timezone.utc).isoformat(),
                       monotonic=time.monotonic(), **values)
         if field is not None:
-            record.update(step=field.step_count, simulation_time=field.time)
+            record.update(step=field.step_count, simulation_time=field.time,
+                          model=model_name(field), model_id=MODEL_IDS[model_name(field)],
+                          nonlinear=asdict(field.nonlinear) if hasattr(field, "nonlinear") else {})
         with self.lock:
             self.file.write(json.dumps(record, allow_nan=False) + "\n")
             self.file.flush()
@@ -124,15 +126,15 @@ class Acquisition(threading.Thread):
 class Engine:
     """Simulation state owner. All mutations execute between integration steps."""
 
-    def __init__(self, log, source="stationary"):
+    def __init__(self, log, source="stationary", model="linear"):
         if source not in ("camera", *SYNTHETIC_MODES):
             raise ValueError("invalid input source")
-        self.field, self.log, self.source = Field(), log, source
+        self.field, self.log, self.source = create_field(model), log, source
         self.paused = False
         self.coupling_enabled = True
         self.fault = ""
         self.message = ""
-        self.display_range = 2.0 if source == "camera" else 0.2
+        self.display_range = .05 if model == "sextic" else (2.0 if source == "camera" else 0.2)
         self.intensity = 1.0
         self.preview_enabled = False
         self.command_revision = 0
@@ -144,11 +146,28 @@ class Engine:
                        python=platform.python_version(), numpy=np.__version__,
                        platform=platform.platform(), source_scaling="Y/127.5-1; full-frame area average")
 
+    @property
+    def model(self):
+        return model_name(self.field)
+
     def command(self, name, value=None, revision=None):
         self.command_revision = self.command_revision + 1 if revision is None else revision
         try:
             if name == "parameters":
                 self.field.configure(**value)
+            elif name == "model":
+                if value == self.model:
+                    raise ValueError("Model already active; use Reset field to clear its state")
+                candidate = create_field(value)
+                self.field = candidate
+                self.paused, self.coupling_enabled, self.fault = True, False, ""
+                self.epoch += 1
+            elif name == "seed":
+                if self.model != "sextic":
+                    raise ValueError("The explicit seed control requires soft sextic mode")
+                self.field.seed_control()
+                self.paused, self.coupling_enabled, self.fault = True, False, ""
+                self.epoch += 1
             elif name == "paused":
                 if self.fault and not value:
                     raise ValueError("Reset or restore a valid checkpoint before resuming a numerical fault")
@@ -169,7 +188,7 @@ class Engine:
             elif name == "save":
                 self.field.save(value)
             elif name == "load":
-                loaded = Field.load(value)
+                loaded = load_field(value)
                 if loaded.n != 256 or not loaded.sponge:
                     raise ValueError("Application checkpoints must use a 256x256 grid with sponge")
                 self.field = loaded
@@ -179,11 +198,16 @@ class Engine:
                 self.source = value
             else:
                 raise ValueError(f"unsupported command: {name}")
-            self.message = f"Applied {name}" + ("; paused, coupling off" if name == "load" else "")
+            self.message = f"Applied {name}" + ("; paused, coupling off" if name in ("load", "model", "seed") else "")
+            if name == "model":
+                self.message += "; model defaults, zero state on change; display range retained"
+            elif name == "seed":
+                self.message += "; imposed Gaussian, c=.3, γ=κ=0, ω=8, A=.1 (not camera formation)"
             self.log.write("control", self.field, name=name, value=value, epoch=self.epoch,
                            parameters=asdict(self.field.parameters), paused=self.paused,
                            coupling_enabled=self.coupling_enabled)
-        except (ValueError, OSError, KeyError, TypeError, EOFError, zipfile.BadZipFile) as exc:
+        except (ValueError, OSError, KeyError, TypeError, EOFError, OverflowError,
+                FloatingPointError, zipfile.BadZipFile) as exc:
             self.message = f"Rejected {name}: {exc}"
             self.log.write("control_rejected", self.field, name=name, error=str(exc))
 
@@ -198,10 +222,10 @@ class Engine:
 
 
 class Runtime(threading.Thread):
-    def __init__(self, source="stationary", device=None, exposure=156, log_path=None):
+    def __init__(self, source="stationary", device=None, exposure=156, log_path=None, model="linear"):
         super().__init__(name="sentio-simulation", daemon=True)
         self.log = EventLog(log_path)
-        self.engine = Engine(self.log, source)
+        self.engine = Engine(self.log, source, model)
         self.stop_event = threading.Event()
         self.mailbox = LatestFrame()
         self.capture = Acquisition(self.mailbox, self.log, self.stop_event, device, exposure) if source == "camera" else None
@@ -294,9 +318,12 @@ class Runtime(threading.Thread):
                                        steps_per_second=sps, simulation_seconds_per_second=sim_speed,
                                        skipped_wall_seconds=skipped_wall, capture=capture,
                                        input_fresh=fresh, input_enabled=engine.coupling_enabled,
+                                       input_age=max(0, now-stamp),
                                        paused=engine.paused, epoch=engine.epoch)
                         next_log = now + 1
                     snap = dict(u=engine.field.u.copy(), diagnostics=diagnostics,
+                                model=engine.model,
+                                nonlinear=asdict(engine.field.nonlinear) if engine.model == "sextic" else {},
                                 parameters=asdict(engine.field.parameters), paused=engine.paused,
                                 coupling_enabled=engine.coupling_enabled, fault=engine.fault,
                                 message=engine.message, source=engine.source, capture=capture,
@@ -305,6 +332,7 @@ class Runtime(threading.Thread):
                                 skipped_wall_seconds=skipped_wall, history=list(history),
                                 display_range=engine.display_range, intensity=engine.intensity,
                                 preview_enabled=engine.preview_enabled,
+                                epoch=engine.epoch,
                                 command_revision=engine.command_revision,
                                 wall_seconds=now-start)
                     with self.lock:

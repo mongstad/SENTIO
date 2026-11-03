@@ -1,0 +1,177 @@
+"""Focused visible GUI smoke protocol, real camera by default; scalar evidence only.
+
+Run from a desktop terminal. No offscreen fallback and no camera image saving.
+The optional screenshot contains the field/UI only (preview remains disabled).
+"""
+
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import json
+from pathlib import Path
+import platform
+import time
+
+import numpy as np
+from PySide6.QtCore import Qt
+from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QApplication
+
+from sentio.gui import Window
+from sentio.runtime import Runtime
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source", choices=("camera", "stationary"), default="camera")
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--screenshot", type=Path)
+    parser.add_argument("--leave-open", action="store_true")
+    args = parser.parse_args()
+    if args.output.exists():
+        parser.error("output already exists; choose a new evidence path")
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    app = QApplication([])
+    if app.platformName() in ("offscreen", "minimal"):
+        parser.error("this protocol requires a visible desktop Qt platform")
+    runtime = Runtime(source=args.source, model="sextic")
+    window = Window(runtime)
+    measurements, controls, checks = {}, [], []
+    failure = ""
+
+    def wait_for(predicate, timeout=5):
+        deadline = time.monotonic()+timeout
+        while time.monotonic() < deadline:
+            app.processEvents()
+            if runtime.failure:
+                raise RuntimeError(runtime.failure)
+            if predicate():
+                return
+            time.sleep(.01)
+        raise AssertionError("GUI acknowledgement/state timed out")
+
+    def command(name, value=None, widget_action=None):
+        start = time.monotonic()
+        prior = runtime.command_sequence
+        (widget_action or (lambda: window.send(name, value)))()
+        wait_for(lambda: runtime.command_sequence > prior and
+                 runtime.latest()["command_revision"] >= runtime.command_sequence)
+        snap = runtime.latest()
+        controls.append(dict(name=name, value=value, acknowledgement_seconds=time.monotonic()-start,
+                             message=snap["message"], model=snap["model"]))
+        if snap["message"].startswith("Rejected"):
+            raise AssertionError(snap["message"])
+
+    def typed(key, value):
+        def action():
+            widget = window.controls[key]
+            widget.setFocus()
+            widget.selectAll()
+            QTest.keyClicks(widget, str(value))
+            QTest.keyClick(widget, Qt.Key.Key_Return)
+        command("parameters", {key: value}, action)
+
+    def observe(seconds, phase=None):
+        start, samples = time.monotonic(), []
+        while time.monotonic()-start < seconds:
+            app.processEvents()
+            snap = runtime.latest()
+            if snap["fault"] or runtime.failure:
+                raise AssertionError(snap["fault"] or runtime.failure)
+            if args.source == "camera" and snap["capture"]["state"] != "running":
+                raise AssertionError(str(snap["capture"]))
+            if phase and time.monotonic()-start >= 3:
+                times = window.render_times
+                samples.append(dict(camera_fps=snap["capture"]["fps"],
+                                    steps_per_second=snap["steps_per_second"],
+                                    model_seconds_per_wall_second=snap["sim_speed"],
+                                    input_age_ms=1000*snap["input_age"],
+                                    display_fps=(len(times)-1)/max(times[-1]-times[0], 1e-6),
+                                    peak=snap["diagnostics"]["peak"]))
+            time.sleep(.01)
+        if phase:
+            measurements[phase] = {key: dict(min=float(np.min(values)), median=float(np.median(values)),
+                                              max=float(np.max(values)))
+                                   for key in samples[0] for values in ([s[key] for s in samples],)}
+
+    runtime.start()
+    window.show()
+    try:
+        wait_for(lambda: runtime.latest() is not None and runtime.latest()["diagnostics"]["step"] > 10)
+        if args.source == "camera":
+            wait_for(lambda: runtime.latest()["capture"]["state"] == "running")
+        observe(10, "sextic_initial")
+        for key, value in (("omega", 10), ("amplitude", .12), ("speed", .35),
+                           ("damping", .5), ("coupling", 1.5)):
+            typed(key, value)
+        command("paused", True, lambda: window.pause.setChecked(True))
+        before = runtime.latest()["u"].copy()
+        frames = runtime.latest()["capture"].get("frames", 0)
+        observe(1)
+        np.testing.assert_array_equal(runtime.latest()["u"], before)
+        if args.source == "camera":
+            assert runtime.latest()["capture"]["frames"] > frames
+        checks.append("pause freezes field while acquisition continues")
+        command("display_range", .025)
+        command("intensity", 1.5)
+        np.testing.assert_array_equal(runtime.latest()["u"], before)
+        checks.append("display controls preserve physical state")
+        command("save", str(args.output.with_suffix(".npz")))
+        command("reset")
+        assert not np.any(runtime.latest()["u"])
+        command("load", str(args.output.with_suffix(".npz")))
+        np.testing.assert_array_equal(runtime.latest()["u"], before)
+        assert runtime.latest()["paused"] and not runtime.latest()["coupling_enabled"]
+        checks.append("sextic save/reset/restore exact, paused and uncoupled")
+        command("paused", False)
+        observe(2)
+        assert not np.array_equal(runtime.latest()["u"], before)
+        checks.append("uncoupled field continues evolving")
+        index = window.model_combo.findData("linear")
+        command("model", "linear", lambda: window.model_combo.activated.emit(index))
+        assert runtime.latest()["paused"] and not runtime.latest()["coupling_enabled"]
+        assert not np.any(runtime.latest()["u"])
+        wait_for(lambda: window.controls["coupling"].value() == 2)
+        command("display_range", .05)
+        command("intensity", 1)
+        command("coupling_enabled", True)
+        command("paused", False)
+        observe(10, "linear")
+        index = window.model_combo.findData("sextic")
+        command("model", "sextic", lambda: window.model_combo.activated.emit(index))
+        assert runtime.latest()["paused"] and not runtime.latest()["coupling_enabled"]
+        assert not np.any(runtime.latest()["u"])
+        checks.append("both model transitions reset, pause and disable coupling")
+        command("coupling_enabled", True)
+        command("paused", False)
+        observe(10, "sextic_final")
+        if args.screenshot:
+            window.grab().save(str(args.screenshot))
+    except Exception as exc:
+        failure = f"{type(exc).__name__}: {exc}"
+    snap = runtime.latest()
+    report = dict(utc=datetime.now(timezone.utc).isoformat(), source=args.source,
+                  qt_platform=app.platformName(), visible=window.isVisible(),
+                  python=platform.python_version(), numpy=np.__version__,
+                  source_sha256={str(p): hashlib.sha256(p.read_bytes()).hexdigest()
+                                 for p in [*Path("sentio").glob("*.py"), Path("tools/validate_live_gui.py")]},
+                  scalar_log=str(runtime.log.path), checks=checks, controls=controls,
+                  measurements=measurements, failure=failure, final_model=snap["model"] if snap else None,
+                  camera={k:v for k,v in snap["capture"].items() if k not in ("identity",)} if snap else None,
+                  final_diagnostics=snap["diagnostics"] if snap else None,
+                  limitations="No physical scene manipulation or unplugging; age is sampled driver-frame age at simulation publication, not end-to-end optical latency.")
+    if not args.leave_open or failure:
+        window.close()
+        app.processEvents()
+        report["shutdown"] = dict(runtime_stopped=not runtime.is_alive(),
+                                  capture_stopped=runtime.capture is None or not runtime.capture.is_alive())
+    args.output.write_text(json.dumps(report, indent=2, allow_nan=False)+"\n")
+    print(json.dumps(dict(report=str(args.output), failure=failure,
+                          measurements=measurements, left_open=args.leave_open and not failure)), flush=True)
+    if args.leave_open and not failure:
+        return app.exec()
+    return int(bool(failure))
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

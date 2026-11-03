@@ -9,9 +9,10 @@ from PySide6.QtCore import QPointF, Qt, QTimer
 from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog,
                                QFormLayout, QHBoxLayout, QLabel, QMainWindow,
-                               QMessageBox, QPushButton, QVBoxLayout, QWidget)
+                               QMessageBox, QPushButton, QScrollArea, QVBoxLayout, QWidget)
 
 from .inputs import SYNTHETIC_MODES
+from .models import MODEL_LABELS
 
 
 def signed_rgb(u, display_range, intensity):
@@ -40,7 +41,7 @@ class EnergyPlot(QWidget):
         p = QPainter(self)
         p.fillRect(self.rect(), QColor("#141b25"))
         p.setPen(QColor("#c8d4e3"))
-        p.drawText(12, 20, "Discrete wave energy (not conserved with input / damping)")
+        p.drawText(12, 20, "Field energy (includes local potential in sextic mode)")
         if not self.history:
             return
         t0, t1 = self.history[0][0], self.history[-1][0]
@@ -58,6 +59,7 @@ class Window(QMainWindow):
         super().__init__()
         self.runtime = runtime
         self.pending = {}
+        self.shown_epoch = None
         self.setWindowTitle("SENTIO · Artificial Sensory Field · Prototype 1")
         self.resize(1180, 850)
         self.setStyleSheet("QWidget { background: #10161f; color: #d9e3f0; font-size: 13px; } "
@@ -66,12 +68,21 @@ class Window(QMainWindow):
         root = QWidget()
         self.setCentralWidget(root)
         row = QHBoxLayout(root)
-        left, right = QVBoxLayout(), QVBoxLayout()
+        left = QVBoxLayout()
         row.addLayout(left, 3)
-        row.addLayout(right, 2)
+        panel = QWidget()
+        right = QVBoxLayout(panel)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(panel)
+        scroll.setMinimumWidth(470)
+        row.addWidget(scroll, 2)
         title = QLabel("SENTIO / evolving signed scalar field")
         title.setStyleSheet("font-size: 22px; font-weight: bold;")
         left.addWidget(title)
+        self.live_status = QLabel()
+        self.live_status.setWordWrap(True)
+        left.addWidget(self.live_status)
         self.field_image = QLabel()
         self.field_image.setMinimumSize(400, 400)
         self.field_image.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -84,6 +95,15 @@ class Window(QMainWindow):
         self.source_label = QLabel()
         self.source_label.setWordWrap(True)
         right.addWidget(self.source_label)
+        self.model_combo = QComboBox()
+        for key, label in MODEL_LABELS.items():
+            self.model_combo.addItem(label, key)
+        self.model_combo.setCurrentIndex(self.model_combo.findData(runtime.engine.model))
+        self.model_combo.activated.connect(lambda index: self.send("model", self.model_combo.itemData(index)))
+        right.addWidget(self.model_combo)
+        transition = QLabel("Changing model resets field and model settings, pauses, and turns coupling off. Display range is retained.")
+        transition.setWordWrap(True)
+        right.addWidget(transition)
         if runtime.engine.source != "camera":
             self.source_combo = QComboBox()
             self.source_combo.addItems(SYNTHETIC_MODES)
@@ -96,6 +116,8 @@ class Window(QMainWindow):
             ("speed", "Wave speed (domain units / s)", .01, 2, .05, .3),
             ("damping", "Damping (1 / s)", 0, 10, .1, .4),
             ("coupling", "Input acceleration gain", 0, 20, .1, 2),
+            ("omega", "Sextic ω (1 / model s)", .0001, 1000000, 1, 8),
+            ("amplitude", "Sextic amplitude scale A", .0001, 10000, .01, .1),
             ("display_range", "Display range (± field units)", .0001, 10000, .05, runtime.engine.display_range),
             ("intensity", "Display intensity", .01, 100, .1, 1),
         ):
@@ -105,7 +127,10 @@ class Window(QMainWindow):
             spin.setSingleStep(step)
             spin.setValue(value)
             spin.setKeyboardTracking(False)
-            spin.valueChanged.connect(lambda v, k=key: self.send("parameters", {k:v}) if k in ("speed", "damping", "coupling") else self.send(k, v))
+            spin.valueChanged.connect(lambda v, k=key: self.send("parameters", {k:v}) if k in ("speed", "damping", "coupling", "omega", "amplitude") else self.send(k, v))
+            if key in ("omega", "amplitude"):
+                spin.setEnabled(runtime.engine.model == "sextic")
+                spin.setToolTip("Type and press Enter to apply. The solver rejects unsafe combinations; widget limits are not a validated parameter region.")
             self.controls[key] = spin
             form.addRow(label, spin)
         right.addLayout(form)
@@ -123,6 +148,10 @@ class Window(QMainWindow):
             button.clicked.connect(action)
             buttons.addWidget(button)
         right.addLayout(buttons)
+        self.seed = QPushButton("Reset to explicit Gaussian seed control (coupling off)")
+        self.seed.setEnabled(runtime.engine.model == "sextic")
+        self.seed.clicked.connect(lambda: self.send("seed"))
+        right.addWidget(self.seed)
         self.diagnostics = QLabel()
         self.diagnostics.setWordWrap(True)
         self.diagnostics.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -185,6 +214,7 @@ class Window(QMainWindow):
         self.render_times.append(now)
         render_fps = (len(self.render_times)-1) / max(now-self.render_times[0], 1e-6)
         d, c = snap["diagnostics"], snap["capture"]
+        epoch_changed = snap["epoch"] != self.shown_epoch
         self.pending = {key:revision for key,revision in self.pending.items()
                         if revision > snap["command_revision"]}
         image = pixmap(signed_rgb(snap["u"], snap["display_range"], snap["intensity"]))
@@ -196,25 +226,49 @@ class Window(QMainWindow):
         self.legend.setText(f"Blue −{limit:.4g}   ·   dark 0   ·   orange +{limit:.4g}   |   clipped {saturation:.2f}%")
         self.source_label.setText("LIVE CAMERA · processed luminance → acceleration" if snap["source"] == "camera"
                                   else f"SYNTHETIC CONTROL · {snap['source']} (no webcam)")
+        self.setWindowTitle(f"SENTIO · {MODEL_LABELS[snap['model']]} · {snap['source']}")
+        if "model" not in self.pending:
+            self.model_combo.setCurrentIndex(self.model_combo.findData(snap["model"]))
+        self.seed.setEnabled(snap["model"] == "sextic")
         for key, widget in self.controls.items():
-            if not widget.hasFocus() and key not in self.pending:
-                self.sync(widget, snap["parameters"].get(key, snap.get(key)))
+            if key in ("omega", "amplitude"):
+                widget.setEnabled(snap["model"] == "sextic")
+                if snap["model"] != "sextic":
+                    continue
+            if (epoch_changed or not widget.hasFocus()) and key not in self.pending:
+                self.sync(widget, snap["parameters"].get(key, snap["nonlinear"].get(key, snap.get(key))))
+        self.shown_epoch = snap["epoch"]
         for key, widget in (("paused", self.pause), ("coupling_enabled", self.coupling),
                             ("preview_enabled", self.preview_toggle)):
             if key not in self.pending:
                 self.sync(widget, snap[key])
         state = "FAULT" if snap["fault"] else "PAUSED" if snap["paused"] else "FINITE"
+        self.live_status.setText(
+            f"{MODEL_LABELS[snap['model']]} · {state}\n"
+            f"Camera / source {c.get('fps', 0):.2f} FPS · simulation {snap['steps_per_second']:.0f} steps/s · "
+            f"{snap['sim_speed']:.2f} model s/wall s · display {render_fps:.1f} FPS")
+        nonlinear = ""
+        if snap["model"] == "sextic":
+            nonlinear = (f"Effective ω {snap['nonlinear']['omega']:g} · A {snap['nonlinear']['amplitude']:g}\n"
+                         f"Local potential E {d['local_potential']:.5g} · wave/curvature {d['wave_curvature_number']:.3f} ≤ 1.6\n"
+                         f"Validity |u| ≤ 4A = {d['envelope']:.5g} · {100*d['envelope_fraction']:.1f}% used"
+                         " (separate from display clipping)\n"
+                         f"Input work {d['input_work']:.5g} · damping loss {d['damping_loss']:.5g}\n"
+                         f"Parameter work {d['parameter_work']:.5g} · balance residual {d['balance_residual']:.3g}\n")
         self.diagnostics.setText(
-            f"{state} · step {d['step']:,} · simulated {d['simulation_time']:.2f} s\n"
+            f"{MODEL_LABELS[snap['model']]} · {state}\n"
+            f"Step {d['step']:,} · simulated {d['simulation_time']:.2f} s\n"
+            f"Signed u [{snap['u'].min():.5g}, {snap['u'].max():.5g}]\n"
             f"Peak |u| {d['peak']:.5g} · peak |v| {d['velocity_peak']:.5g}\n"
-            f"Wave energy {d['energy']:.6g}\n"
+            f"Field energy {d['energy']:.6g} (not conserved with forcing / damping)\n"
+            + nonlinear +
             f"dt {d['dt']:.6f} s · CFL {d['cfl']:.3f} ≤ 0.566\n"
             f"Simulation {snap['steps_per_second']:.1f} steps/s · {snap['sim_speed']:.2f} sim s/wall s\n"
             f"Acquisition {c.get('fps', 0):.2f} FPS · display {render_fps:.1f} FPS\n"
             f"Driver drops {c.get('driver_drops', 0)} · bad frames {c.get('bad_frames', 0)}\n"
             f"Latest-frame discards {c.get('mailbox_discards', 0) + c.get('drained_discards', 0)}\n"
             f"Input {'fresh' if snap['input_fresh'] else 'absent / stale → zero force'} · "
-            f"{'coupled' if snap['coupling_enabled'] else 'coupling off'}\n"
+            f"{'coupled' if snap['coupling_enabled'] else 'coupling off'} · age {1000*snap['input_age']:.1f} ms\n"
             f"Wall time skipped under load {snap['skipped_wall_seconds']:.3f} s")
         warnings = list(c.get("warnings", []))
         if snap["source"] == "camera":

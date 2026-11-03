@@ -1,4 +1,11 @@
-# Prototype 1 model and implementation
+# SENTIO models and implementation
+
+Linear remains the accepted default described below. Issue #6 adds an optional
+soft-sextic model (`--model sextic`) using the [documented potential, guards and
+energy balance](ISSUE_6_CORE.md). [Live integration](ISSUE_6_LIVE.md) documents
+its controls, model transitions, checkpoint dispatch and measured performance.
+The owner's PR #7 update authorizes this scoped nonlinear extension and minimal
+controls before issue #4; the linear integrator and capture format are unchanged.
 
 ## Dynamics and units
 
@@ -67,6 +74,6 @@ Explicit schema-1 NPZ checkpoints contain only `u`, `v`, and JSON metadata (mode
 
 ## Modules and external interfaces
 
-`field.py` owns numerics/checkpoints; `inputs.py` owns source conversion and test stimuli; `camera.py` owns the Linux capture ABI; `runtime.py` owns threads/control/logging; `gui.py` owns visualization; `__main__.py` owns CLI startup. NumPy and PySide6 are the only Python runtime dependencies. No GPU, proprietary runtime, OpenCV conversion, external service, or network upload is required.
+`field.py` owns linear numerics/checkpoints; `sextic.py` owns nonlinear numerics/checkpoints; `models.py` owns the small model registry and validated checkpoint dispatch. `inputs.py` owns source conversion and test stimuli; `camera.py` owns the Linux capture ABI; `runtime.py` owns threads/control/logging; `gui.py` owns visualization; `__main__.py` owns CLI startup. NumPy and PySide6 are the only Python runtime dependencies. No GPU, proprietary runtime, OpenCV conversion, external service, or network upload is required.
 
 The V4L2 implementation follows the installed `linux/videodev2.h`; a compiled test compares ctypes sizes and ioctl request numbers with that header. The [kernel buffer API](https://docs.kernel.org/userspace-api/media/v4l/vidioc-qbuf.html) defines queue ownership, error flags, and sequence metadata. Rendering copies NumPy RGB bytes into a [Qt QImage](https://doc.qt.io/qtforpython-6/PySide6/QtGui/QImage.html) before presenting them, keeping camera and field images separate.

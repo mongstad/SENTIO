@@ -9,9 +9,114 @@ from unittest.mock import patch
 import numpy as np
 
 from sentio.runtime import Engine, EventLog, LatestFrame, Runtime
+from sentio.field import Field
+from sentio.sextic import SexticField
 
 
 class RuntimeTests(unittest.TestCase):
+    def test_models_transitions_and_linear_exact_regression(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log = EventLog(Path(directory)/"models.jsonl")
+            self.addCleanup(log.close)
+            engine, reference = Engine(log), Field()
+            source = np.zeros((256, 256))
+            source[80:100, 130:150] = .7
+            for _ in range(30):
+                engine.step(source)
+                reference.step(source)
+            np.testing.assert_array_equal(engine.field.u, reference.u)
+            np.testing.assert_array_equal(engine.field.v, reference.v)
+            engine.command("parameters", {"damping": 2})
+            engine.command("model", "sextic")
+            self.assertIsInstance(engine.field, SexticField)
+            self.assertTrue(engine.paused)
+            self.assertFalse(engine.coupling_enabled)
+            self.assertEqual(engine.field.time, 0)
+            self.assertEqual(engine.field.parameters.damping, .4)
+            self.assertFalse(np.any(engine.field.u))
+            self.assertEqual(engine.display_range, .2)
+            engine.command("paused", False)
+            engine.command("coupling_enabled", True)
+            engine.step(source)
+            before = engine.field.u.copy()
+            engine.command("model", "unknown")
+            self.assertEqual(engine.model, "sextic")
+            np.testing.assert_array_equal(engine.field.u, before)
+            engine.command("model", "linear")
+            self.assertIs(type(engine.field), Field)
+            self.assertFalse(np.any(engine.field.u))
+            self.assertTrue(engine.paused)
+            self.assertFalse(engine.coupling_enabled)
+
+    def test_sextic_runtime_fault_seed_and_atomic_edit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log = EventLog(Path(directory)/"fault.jsonl")
+            self.addCleanup(log.close)
+            e = Engine(log, model="sextic")
+            e.command("seed")
+            self.assertTrue(e.paused)
+            self.assertFalse(e.coupling_enabled)
+            before = e.field.u.copy()
+            e.command("parameters", {"amplitude": .001, "speed": 1})
+            self.assertIn("Rejected", e.message)
+            self.assertEqual(e.field.parameters.speed, .3)
+            self.assertEqual(e.field.nonlinear.amplitude, .1)
+            np.testing.assert_array_equal(e.field.u, before)
+            e.command("parameters", {"omega": 200})
+            self.assertEqual(e.field.nonlinear.omega, 200)
+            self.assertLess(e.field.dt, 1/480)
+            e.command("parameters", {"omega": float("inf")})
+            self.assertIn("Rejected", e.message)
+            e.command("parameters", {"omega": 8})
+            e.field.u[128, 128] = .399
+            e.field.v[128, 128] = 100
+            before = e.field.u.copy()
+            e.command("paused", False)
+            e.step()
+            self.assertIn("envelope", e.fault)
+            self.assertTrue(e.paused)
+            np.testing.assert_array_equal(e.field.u, before)
+            e.command("paused", False)
+            self.assertTrue(e.paused)
+            e.command("reset")
+            self.assertFalse(e.fault)
+            e.command("paused", False)
+            e.step()
+            self.assertEqual(e.field.step_count, 1)
+
+    def test_cross_model_checkpoint_dispatch_is_atomic_and_logged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log = EventLog(Path(directory)/"restore.jsonl")
+            self.addCleanup(log.close)
+            e = Engine(log, model="sextic")
+            e.command("seed")
+            path = str(Path(directory)/"sextic.npz")
+            e.command("save", path)
+            before = e.field.u.copy()
+            e.command("model", "linear")
+            linear = str(Path(directory)/"linear.npz")
+            e.command("save", linear)
+            e.command("load", path)
+            self.assertEqual(e.model, "sextic")
+            np.testing.assert_array_equal(e.field.u, before)
+            self.assertTrue(e.paused)
+            self.assertFalse(e.coupling_enabled)
+            bad = str(Path(directory)/"bad.npz")
+            np.savez(bad, u=before, v=before, metadata='{"schema":2,"model":"wrong"}')
+            e.command("load", bad)
+            self.assertIn("Rejected", e.message)
+            np.testing.assert_array_equal(e.field.u, before)
+            small = str(Path(directory)/"small.npz")
+            SexticField(n=33).save(small)
+            e.command("load", small)
+            self.assertIn("256x256", e.message)
+            np.testing.assert_array_equal(e.field.u, before)
+            e.command("load", linear)
+            self.assertEqual(e.model, "linear")
+            rows = [json.loads(line) for line in log.path.read_text().splitlines()]
+            self.assertTrue(any(r.get("nonlinear", {}).get("omega") == 8 for r in rows))
+            self.assertTrue(all("model" in r for r in rows))
+
     def test_bounded_mailbox_and_disconnect(self):
         box = LatestFrame()
         for i in range(10):

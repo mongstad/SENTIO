@@ -1,4 +1,11 @@
-# Issue #6 — independent nonlinear core, integration blocked on #4
+# Issue #6 — independent nonlinear core validation
+
+**Historical phase report.** The core-only phase below was completed before the
+owner [authorized live integration without waiting for #4](https://github.com/mongstad/SENTIO/pull/7#issuecomment-6614518495).
+That instruction supersedes this report's original dependency boundary and
+future-work language. The application now exposes both models; see
+[the live integration report and owner instructions](ISSUE_6_LIVE.md).
+The numerical evidence and its original provenance below are preserved.
 
 ## Scope and dependency boundary
 
