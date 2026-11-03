@@ -6,7 +6,9 @@ The experiment asks whether interference and continuing field evolution produce 
 
 ## Current status
 
-**Prototype 1 implemented; awaiting owner review.** The separate `sentio` Python application couples live C922 luminance to a continuing linear 2D field. Synthetic numerical tests and a sustained live-camera run have been performed; see [validation and limitations](docs/VALIDATION.md). No recognition or learning claim is made.
+**Prototype 1 accepted in PR #2.** The separate `sentio` Python application couples live C922 luminance to a continuing linear 2D field. Synthetic numerical tests and a sustained live-camera run have been performed; see [validation and limitations](docs/VALIDATION.md). No recognition or learning claim is made.
+
+[Issue #3 research](docs/ISSUE_3_NONLINEAR_RESEARCH.md) compares three isolated nonlinear potentials with the accepted solver and a massive linear control. A soft sextic potential supports a localized, explicitly seeded oscillation in the tested regime. This is a recommendation for separate owner review, not a nonlinear application mode or evidence of learning. The live application remains linear.
 
 ### Run on Fedora 44
 
