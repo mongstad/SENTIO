@@ -170,7 +170,7 @@ def throughput():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--suite", required=True, choices=("checks","long","throughput"))
+    parser.add_argument("--suite", required=True, choices=("checks","long","throughput","high_frequency"))
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--workers", type=int, default=3, choices=range(1,5))
     args = parser.parse_args()
@@ -194,6 +194,11 @@ def main():
                 results.append(result)
                 print(f"{len(results)}/{len(cases)} {result['case']}: {result['status']}; E={result['final']['energy']:.8g}",flush=True)
         results.sort(key=lambda r:json.dumps(r["case"],sort_keys=True))
+    elif args.suite == "high_frequency":
+        # Follow-up to the long checkerboard's larger balance residual: isolate
+        # time accuracy at the grid scale without changing the production step.
+        results = [execute(Case("checkerboard",duration=4,coupling=20,timestep_factor=f))
+                   for f in (1,.5,.25)]
     else:
         results = checks() if args.suite == "checks" else throughput()
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -194,6 +194,8 @@ class SexticCheckpointTests(unittest.TestCase):
             with np.load(path, allow_pickle=False) as data:
                 metadata = json.loads(str(data["metadata"]))
             changes = ({"schema":1}, {"model":"linear-wave-verlet-sponge-v1"},
+                       {"parameters":{}}, {"nonlinear":{}}, {"nonlinear":{"omega":8}},
+                       {"nonlinear":{"omega":True,"amplitude":.1}},
                        {"envelope_ratio":ENVELOPE_RATIO*2}, {"nonlinear":{"omega":1e8,"amplitude":.1}},
                        {"time":float("nan")}, {"step":-1}, {"sponge":"yes"},
                        {"accounting":dict(reference_energy=0, input_work=0, damping_loss=-1, parameter_work=0)})
@@ -201,6 +203,7 @@ class SexticCheckpointTests(unittest.TestCase):
                 np.savez(path, u=f.u, v=f.v, metadata=json.dumps(metadata|change))
                 with self.assertRaises(ValueError):
                     SexticField.load(path)
+
             for array in (np.full_like(f.u, np.nan), np.ones_like(f.u), np.zeros((2,2)),
                           np.zeros_like(f.u, dtype=np.float32)):
                 np.savez(path, u=array, v=f.v, metadata=json.dumps(metadata))
@@ -211,6 +214,17 @@ class SexticCheckpointTests(unittest.TestCase):
             np.savez(path, u=bad, v=f.v, metadata=json.dumps(metadata))
             with self.assertRaises(ValueError):
                 SexticField.load(path)
+
+    def test_invalid_save_preserves_existing_checkpoint(self):
+        f = SexticField(33)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)/"state.npz"
+            f.save(path)
+            original = path.read_bytes()
+            f.u[16,16] = .5
+            with self.assertRaises(FloatingPointError):
+                f.save(path)
+            self.assertEqual(path.read_bytes(), original)
 
 
 if __name__ == "__main__":

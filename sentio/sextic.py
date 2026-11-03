@@ -268,6 +268,16 @@ class SexticField(Field):
                         raise ValueError("invalid nonlinear checkpoint array header")
         with np.load(path, allow_pickle=False) as data:
             meta = json.loads(str(data["metadata"]))
+            if not isinstance(meta, dict):
+                raise ValueError("invalid nonlinear checkpoint metadata")
+            for key, names in (("parameters", {"speed", "damping", "coupling"}),
+                               ("nonlinear", {"omega", "amplitude"}),
+                               ("accounting", {"reference_energy", "input_work", "damping_loss", "parameter_work"})):
+                values = meta.get(key)
+                if not isinstance(values, dict) or set(values) != names:
+                    raise ValueError(f"checkpoint must explicitly specify all {key}")
+                if any(type(value) not in (int, float) or not math.isfinite(value) for value in values.values()):
+                    raise ValueError(f"invalid numeric checkpoint {key}")
             if meta["schema"] != 2 or meta["model"] != MODEL or meta["envelope_ratio"] != ENVELOPE_RATIO:
                 raise ValueError("unsupported nonlinear checkpoint model/schema/envelope")
             if type(meta["sponge"]) is not bool:
@@ -285,7 +295,8 @@ class SexticField(Field):
                 field._energy(field.parameters, field.nonlinear)
             except FloatingPointError as exc:
                 raise ValueError(str(exc)) from exc
-            if type(meta["step"]) is not int or meta["step"] < 0 or not math.isfinite(meta["time"]) or meta["time"] < 0:
+            if (type(meta["step"]) is not int or meta["step"] < 0 or type(meta["time"]) not in (int, float)
+                    or not math.isfinite(meta["time"]) or meta["time"] < 0):
                 raise ValueError("invalid nonlinear checkpoint clock")
             field.step_count, field.time = meta["step"], meta["time"]
             for key in ("reference_energy", "input_work", "damping_loss", "parameter_work"):

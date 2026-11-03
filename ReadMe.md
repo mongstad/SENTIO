@@ -10,6 +10,8 @@ The experiment asks whether interference and continuing field evolution produce 
 
 [Issue #3 research](docs/ISSUE_3_NONLINEAR_RESEARCH.md) compares three isolated nonlinear potentials with the accepted solver and a massive linear control. A soft sextic potential supports a localized, explicitly seeded oscillation in the tested regime. This is a recommendation for separate owner review, not a nonlinear application mode or evidence of learning. The live application remains linear.
 
+[Issue #6's independent numerical core](docs/ISSUE_6_CORE.md) is implemented and validated separately on its issue branch. At the owner's direction, runtime/UI integration waits for issue #4 to merge; no nonlinear mode is exposed in the live application yet.
+
 ### Run on Fedora 44
 
 From this checkout, install the open-source CPU/Qt dependencies and first run the synthetic control:

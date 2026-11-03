@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "suite": "throughput",
+  "metadata": {
+    "utc": "2026-11-03T20:12:10.061429+00:00",
+    "python": "3.14.8",
+    "numpy": "2.4.3",
+    "platform": "Linux-7.2.14-200.fc44.x86_64-x86_64-with-glibc2.43",
+    "random_seed": null,
+    "source_rate": 30,
+    "source_sha256": {
+      "sentio/field.py": "61daca4cc66e7c5529a14f267fdee3a7db2f6a4006fa720118da184c76ae6ea7",
+      "sentio/sextic.py": "40d6ffd9d15a7a54d3ec49aecfe50e638b3ca1b97882dd84aee8f5bcade4a00a",
+      "sentio/inputs.py": "4373287ddab629bb27ef6b2d8bc1010bd6b08dd19b5884856a772d01f8f9e7d8",
+      "research/issue_3/model.py": "dee6eda4defc40612baa9e9ddad239eec065dd758d7aeef326d9d31b33789661",
+      "tools/validate_sextic_core.py": "2c31f6d56cf5d3ac914b940b237dc9e5eb8b0b7879ce00f942b65ffa2c69eb99"
+    }
+  },
+  "results": {
+    "configuration": {
+      "n": 256,
+      "parameters": {
+        "speed": 0.3,
+        "damping": 0.4,
+        "coupling": 2.0
+      },
+      "nonlinear": {
+        "omega": 8.0,
+        "amplitude": 0.1
+      }
+    },
+    "warmup_steps": 100,
+    "windows": [
+      {
+        "steps": 1000,
+        "wall_seconds": 4.239540745998966,
+        "steps_per_second": 235.87460527269195,
+        "model_seconds_per_wall_second": 0.49140542765144163
+      },
+      {
+        "steps": 1000,
+        "wall_seconds": 4.239936702000705,
+        "steps_per_second": 235.8525775934647,
+        "model_seconds_per_wall_second": 0.4913595366530515
+      },
+      {
+        "steps": 1000,
+        "wall_seconds": 4.053461383000467,
+        "steps_per_second": 246.70273268023007,
+        "model_seconds_per_wall_second": 0.513964026417146
+      }
+    ],
+    "final": {
+      "model": "soft-sextic-verlet-sponge-v1",
+      "step": 3100,
+      "simulation_time": 6.458333333333127,
+      "dt": 0.0020833333333333333,
+      "cfl": 0.15937500000000002,
+      "curvature_bound": 27712.0,
+      "wave_curvature_number": 0.5687538156160166,
+      "minimum": -0.015425631756397282,
+      "maximum": 0.015037186075818344,
+      "peak": 0.015425631756397282,
+      "velocity_peak": 0.005010092634044648,
+      "energy": 0.00019489947895179956,
+      "kinetic": 8.72496940090962e-07,
+      "gradient_energy": 5.9202172430556616e-05,
+      "local_potential": 0.00013482480958115198,
+      "potential": 0.00019402698201170858,
+      "reference_energy": 0.0,
+      "input_work": 0.00037157137227135964,
+      "damping_loss": 0.00017665195731001883,
+      "parameter_work": 0.0,
+      "balance_residual": -1.99360095412516e-08,
+      "envelope": 0.4,
+      "envelope_ratio": 4.0,
+      "envelope_fraction": 0.038564079390993204,
+      "envelope_ok": true,
+      "finite": true
+    },
+    "limitation": "Unpaced core only; excludes source conversion, capture, UI, and runtime publication"
+  }
+}
