@@ -12,6 +12,8 @@ The experiment asks whether interference and continuing field evolution produce 
 
 **Issue #6 adds an optional live soft-sextic mode**, with model selection, ω/A controls, safety diagnostics and model-aware checkpoints. Linear remains the default. The owner authorized minimal GUI integration before #4; its broader numeric-control redesign remains separate. See the [live application guide and validation](docs/ISSUE_6_LIVE.md) and preserved [core numerical evidence](docs/ISSUE_6_CORE.md).
 
+**Issue #8 adds launch-selectable 256², 512² and 1024² fields** on the same unit-square domain. The default remains 256². Larger grids can advance much slower than wall time on the CPU; camera resolution remains 640×480. See [grid measurements and limitations](docs/ISSUE_8_GRIDS.md).
+
 ### Run on Fedora 44
 
 From this checkout, install the open-source CPU/Qt dependencies and first run the synthetic control:
@@ -30,6 +32,19 @@ python3 -m sentio --source camera
 # Optional experimental model, same live C922 acquisition:
 python3 -m sentio --source camera --model sextic
 ```
+
+Choose a field resolution at launch, with one camera window at a time:
+
+```bash
+python3 -m sentio --source camera --model sextic --grid 512
+python3 -m sentio --source camera --model sextic --grid 1024
+```
+
+Close and restart to change grid size; model switching retains the selected grid.
+Restore requires a checkpoint from the same grid size, and reports the required
+launch size otherwise. Grid size, actual model-time rate, process resident/peak
+memory and skipped wall time are shown in the window. At a large grid, a smoothly
+refreshing window does not imply the field is advancing at real time.
 
 The application discovers a unique C922 capture node, preferring `/dev/v4l/by-id/`. With multiple cameras, pass the selected persistent path using `--device /dev/v4l/by-id/...`. `/dev/video0` remains usable as an explicit, temporary selection. Run as your desktop user with camera access, not as root. Close other applications using the camera. The Codex sandbox may hide video devices; launch from a normal desktop terminal in that case.
 

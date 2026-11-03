@@ -12,6 +12,7 @@ import numpy as np
 from .camera import devices
 from .inputs import SYNTHETIC_MODES
 from .models import MODEL_LABELS
+from .grid import DEFAULT_GRID, GRID_SIZES
 from .runtime import Runtime
 
 
@@ -31,7 +32,8 @@ def headless(runtime, seconds, output=None):
     finally:
         runtime.close()
     stable = [s for s in samples if s["wall_seconds"] >= 3]
-    report = dict(schema=1, source=runtime.engine.source, model=runtime.engine.model, requested_seconds=seconds,
+    report = dict(schema=1, source=runtime.engine.source, model=runtime.engine.model,
+                  grid=runtime.engine.field.n, requested_seconds=seconds,
                   interrupted=interrupted, runtime_failure=runtime.failure,
                   scalar_log=str(runtime.log.path), sample_count=len(samples),
                   all_finite=all(s["diagnostics"]["finite"] and not s["fault"] for s in samples),
@@ -55,6 +57,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="SENTIO: live 2D scalar field")
     parser.add_argument("--model", choices=tuple(MODEL_LABELS), default="linear",
                         help="linear default, or soft sextic experimental dynamics")
+    parser.add_argument("--grid", type=int, choices=GRID_SIZES, default=DEFAULT_GRID,
+                        help="square field resolution on the fixed unit domain (restart to change)")
     parser.add_argument("--source", choices=("camera", *SYNTHETIC_MODES), default="stationary")
     parser.add_argument("--device", help="V4L2 path, preferably /dev/v4l/by-id/...; otherwise discover unique C922")
     parser.add_argument("--exposure", type=int, default=156, help="manual exposure in 100 µs units (1..300)")
@@ -71,7 +75,7 @@ def main(argv=None):
         parser.error("--seconds must be in (0, 3600]")
     if not 1 <= args.exposure <= 300:
         parser.error("--exposure must be in [1, 300]")
-    runtime = Runtime(args.source, args.device, args.exposure, args.log, model=args.model)
+    runtime = Runtime(args.source, args.device, args.exposure, args.log, model=args.model, grid=args.grid)
     if args.headless:
         signal.signal(signal.SIGTERM, lambda *_: runtime.stop_event.set())
         return headless(runtime, args.seconds, args.report)

@@ -1,0 +1,57 @@
+{
+  "utc": "2026-11-03T21:14:31.413854+00:00",
+  "suite": "throughput",
+  "python": "3.14.8",
+  "numpy": "2.4.3",
+  "platform": "Linux-7.2.14-200.fc44.x86_64-x86_64-with-glibc2.43",
+  "seed": null,
+  "source_sha256": {
+    "sentio/__init__.py": "5d402c952b53de6637a0c8de5a8a15f445a3129c38b9fb86799b051220a6e50a",
+    "sentio/camera.py": "5b071401b9f3a9c6d9c386016f22f2717280b3f5e44f96fa8a152f043bbbb4af",
+    "sentio/field.py": "3b75d7f588d2b8ab63a03ed6668d11ad80d1e46e42502526976440f87b30b85b",
+    "sentio/inputs.py": "7d3acaec25dbd92162a594ee9e6edb4c9fcc4e3be0c35c3d62f5f58754c1ea7b",
+    "sentio/__main__.py": "673dc0f622dee9fbdc91889f9113b653079c6e03d1c9442226fb534913adee52",
+    "sentio/gui.py": "3543b02f6958aed1419507967a9a74ad2a55789eca62b6fb31ed3ef1a924310b",
+    "sentio/models.py": "1c46b73e73564c9bffd4412d86a5c577583503e997dc155f1a967344ae5f09ec",
+    "sentio/runtime.py": "6524ab39f73b83b7c916e56ffeefc2cde48a9b2c76c5035e148e4e1df4d6c1bd",
+    "sentio/sextic.py": "0b99caf582401fce268f5f1518a0fb08820d67d16047928e70ebc7c979a9918a",
+    "sentio/grid.py": "a751d2cb05eaee22e22cc69ad27e12e9a9a7e8e7cb4a2354d05b3b4895cca62d",
+    "sentio/metrics.py": "733804facfb6c778ff7742c62bd5368b26700a318ec18209a77ddbc45536fb6a",
+    "tools/validate_grids.py": "8e48f8e86c3ced6181042b670918022e1e8f02a24010e091b9e5cb32da66afee"
+  },
+  "results": {
+    "grid": 512,
+    "model": "linear",
+    "wall_seconds": 3.0047789359996386,
+    "measured_steps": 386,
+    "steps_per_second": 128.46202939438018,
+    "model_seconds_per_wall_second": 0.47403194838748297,
+    "memory": {
+      "resident_mib": 56.50390625,
+      "peak_resident_mib": 60.046875
+    },
+    "physical_parameters": {
+      "speed": 0.3,
+      "damping": 0.4,
+      "coupling": 2.0
+    },
+    "final": {
+      "n": 512,
+      "dx": 0.0019569471624266144,
+      "domain_length": 1.0,
+      "step": 396,
+      "simulation_time": 1.4612617630782603,
+      "dt": 0.00369005495726835,
+      "cfl": 0.565685424949238,
+      "peak": 0.06870706318671944,
+      "velocity_peak": 0.041801643841488725,
+      "energy": 0.001557287416345101,
+      "kinetic": 0.0001256089501065683,
+      "potential": 0.0014316784662385328,
+      "finite": true
+    },
+    "includes": "solver only, fixed source; no capture, GUI or diagnostic publication"
+  },
+  "failure": "",
+  "wall_seconds": 3.1061149619999924
+}

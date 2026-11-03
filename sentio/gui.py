@@ -18,11 +18,15 @@ from .models import MODEL_LABELS
 def signed_rgb(u, display_range, intensity):
     """Fixed symmetric range: negative blue, zero dark gray, positive orange."""
     scaled = np.clip(u * intensity / display_range, -1, 1)
-    base = np.full((*u.shape, 3), 24.0)
     positive = np.array([255, 127, 51]) - 24
     negative = np.array([65, 155, 255]) - 24
-    return (base + np.maximum(scaled, 0)[..., None] * positive
-            + np.maximum(-scaled, 0)[..., None] * negative).astype(np.uint8)
+    # Preserve every cell and the exact color arithmetic, but avoid several
+    # full-grid RGB float64 temporaries at larger resolutions.
+    above, below = np.maximum(scaled, 0), np.maximum(-scaled, 0)
+    rgb = np.empty((*u.shape, 3), dtype=np.uint8)
+    for channel in range(3):
+        rgb[..., channel] = 24 + above*positive[channel] + below*negative[channel]
+    return rgb
 
 
 def pixmap(rgb):
@@ -226,7 +230,7 @@ class Window(QMainWindow):
         self.legend.setText(f"Blue −{limit:.4g}   ·   dark 0   ·   orange +{limit:.4g}   |   clipped {saturation:.2f}%")
         self.source_label.setText("LIVE CAMERA · processed luminance → acceleration" if snap["source"] == "camera"
                                   else f"SYNTHETIC CONTROL · {snap['source']} (no webcam)")
-        self.setWindowTitle(f"SENTIO · {MODEL_LABELS[snap['model']]} · {snap['source']}")
+        self.setWindowTitle(f"SENTIO · {snap['grid']}×{snap['grid']} · {MODEL_LABELS[snap['model']]} · {snap['source']}")
         if "model" not in self.pending:
             self.model_combo.setCurrentIndex(self.model_combo.findData(snap["model"]))
         self.seed.setEnabled(snap["model"] == "sextic")
@@ -244,9 +248,12 @@ class Window(QMainWindow):
                 self.sync(widget, snap[key])
         state = "FAULT" if snap["fault"] else "PAUSED" if snap["paused"] else "FINITE"
         self.live_status.setText(
-            f"{MODEL_LABELS[snap['model']]} · {state}\n"
+            f"{MODEL_LABELS[snap['model']]} · {state} · {snap['grid']}×{snap['grid']} field\n"
             f"Camera / source {c.get('fps', 0):.2f} FPS · simulation {snap['steps_per_second']:.0f} steps/s · "
             f"{snap['sim_speed']:.2f} model s/wall s · display {render_fps:.1f} FPS")
+        memory = snap["memory"]
+        memory_text = (f"Process RSS {memory['resident_mib']:.1f} MiB · peak {memory['peak_resident_mib']:.1f} MiB"
+                       if all(v is not None for v in memory.values()) else "Process memory unavailable")
         nonlinear = ""
         if snap["model"] == "sextic":
             nonlinear = (f"Effective ω {snap['nonlinear']['omega']:g} · A {snap['nonlinear']['amplitude']:g}\n"
@@ -257,6 +264,9 @@ class Window(QMainWindow):
                          f"Parameter work {d['parameter_work']:.5g} · balance residual {d['balance_residual']:.3g}\n")
         self.diagnostics.setText(
             f"{MODEL_LABELS[snap['model']]} · {state}\n"
+            f"Grid {snap['grid']}×{snap['grid']} · unit square · dx {d['dx']:.6g}\n"
+            f"Restart with --grid 256 / 512 / 1024 to change resolution\n"
+            f"{memory_text}\n"
             f"Step {d['step']:,} · simulated {d['simulation_time']:.2f} s\n"
             f"Signed u [{snap['u'].min():.5g}, {snap['u'].max():.5g}]\n"
             f"Peak |u| {d['peak']:.5g} · peak |v| {d['velocity_peak']:.5g}\n"

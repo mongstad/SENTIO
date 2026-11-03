@@ -38,6 +38,14 @@ class GuiTests(unittest.TestCase):
         np.testing.assert_array_equal(rgb[0, 0], rgb[0, 1])
         np.testing.assert_array_equal(u, before)
 
+    def test_large_grid_colors_match_original_mapping_exactly(self):
+        u = np.random.default_rng(8).uniform(-.5, .5, (1024, 1024))
+        scaled = np.clip(u*1.3/.2, -1, 1)
+        original = (np.full((*u.shape, 3), 24.0)
+                    + np.maximum(scaled, 0)[..., None]*(np.array([255, 127, 51])-24)
+                    + np.maximum(-scaled, 0)[..., None]*(np.array([65, 155, 255])-24)).astype(np.uint8)
+        np.testing.assert_array_equal(signed_rgb(u, .2, 1.3), original)
+
     def test_sextic_typed_controls_transitions_and_checkpoint(self):
         with tempfile.TemporaryDirectory() as directory:
             runtime = Runtime(model="sextic", log_path=Path(directory)/"sextic-gui.jsonl")

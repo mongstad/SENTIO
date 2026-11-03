@@ -2,6 +2,8 @@
 
 import numpy as np
 
+from .grid import DEFAULT_GRID, MAX_GRID
+
 
 def extract_y(raw, width, height, stride):
     """YUYV stores Y0 U Y1 V. Honor row padding; return an owned Y array."""
@@ -21,7 +23,7 @@ def area_axis(a, size, axis):
     return np.moveaxis(np.diff(integral, axis=0) / (a.shape[0] / size), 0, axis)
 
 
-def luminance_source(y, n=256):
+def luminance_source(y, n=DEFAULT_GRID):
     """Full 640x480 frame mapped to square; fixed code-value centering.
 
     Y/127.5 - 1 uses all 8-bit code values, without auto contrast, per-frame
@@ -29,6 +31,8 @@ def luminance_source(y, n=256):
     """
     if y.ndim != 2 or y.dtype != np.uint8:
         raise ValueError("luminance must be a 2D uint8 array")
+    if type(n) is not int or not 1 <= n <= MAX_GRID:
+        raise ValueError(f"resampling size must be an integer in [1, {MAX_GRID}]")
     return area_axis(area_axis(y.astype(np.float64) / 127.5 - 1, n, 0), n, 1)
 
 

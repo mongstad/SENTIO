@@ -9,7 +9,7 @@ controls before issue #4; the linear integrator and capture format are unchanged
 
 ## Dynamics and units
 
-The domain is the dimensionless unit square, with 256×256 nodes including fixed outer-edge nodes. Grid spacing is `dx = 1/(N-1)`. Amplitude `u` and aligned-time velocity `v = du/dt` are float64 arrays initialized to zero. Simulation time is measured in model seconds, not camera exposures.
+The domain is the dimensionless unit square, with N×N nodes including fixed outer-edge nodes. N defaults to 256; `--grid 512` and `--grid 1024` are also supported. Resolution is fixed for a session, requiring a restart to change. Grid spacing is `dx = 1/(N-1)`; the physical domain and sponge thickness remain unchanged across resolutions. Amplitude `u` and aligned-time velocity `v = du/dt` are float64 arrays initialized to zero. Simulation time is measured in model seconds, not camera exposures.
 
 The linear forced wave equation is:
 
@@ -38,11 +38,24 @@ Outer-edge values are forced to zero after each candidate update. The undamped 2
 
 Unsupported, nonfinite, or out-of-range controls are rejected. Source arrays must be finite, grid-shaped, and in `[-1,1]`. Each candidate step is checked for NaN/Inf and a `1e6` magnitude/velocity guard before replacing the previous state. A fault pauses the field and is logged; resetting or restoring valid state is required before resuming. This guard is an operational safeguard, not proof of physical validity. Slow propagation with strong sustained forcing can produce large finite amplitudes; display saturation is reported separately.
 
+Grid changes do not loosen these limits. At c=.3, linear h is approximately
+0.00416667, 0.00369005, 0.00184322 at N=256/512/1024; sextic additionally limits
+h to 1/480 and the potential-curvature criterion, giving approximately
+0.00208333, 0.00208333, 0.00181024 for ω=8. The same model second can therefore
+require more steps, each over more cells. See [grid validation](ISSUE_8_GRIDS.md).
+
 ## Luminance and coupling
 
 V4L2 is required to negotiate progressive YUYV 640×480 at 30 FPS; another format, size, or nominal rate raises an explicit error. Row padding is honored. `Y0 U Y1 V` supplies the even bytes as luminance. Chroma is discarded.
 
 The full rectangle is resampled to the square grid by separable area averaging of piecewise-constant pixels. This stretches camera aspect ratio to the square domain and is not a spatial calibration. The source is `S = area_average(Y/127.5 − 1)`. It uses fixed 8-bit code-value scaling, without gamma inversion, inferred radiance, per-frame mean removal, contrast normalization, or optical-phase interpretation. Camera processing and possible limited-range Y remain properties of the measurement. Color-space metadata is logged but does not trigger an undocumented rescaling.
+
+This identical mapping is used at every field size. 512² upsamples the camera's
+480-row axis while reducing its 640-column axis; 1024² upsamples both axes.
+Each output cell averages its overlap with the same piecewise-constant camera
+pixels. It can expose pixel boundaries more sharply but adds no measured camera
+detail. It does not interpolate an inferred high-resolution image. Sources are
+still held in a one-element mailbox, with no recording or frame-history buffer.
 
 Every incoming source contributes acceleration to the existing state. It never writes the amplitude or velocity arrays. Between frames the most recent fresh source is held. At an age above 250 ms, or on capture failure, the source becomes zero while the field continues. Disabling coupling also sets forcing to zero without clearing the field. Constant brightness can drive a DC response; recurring patterns may reflect forcing, ringing, and boundaries. No frame history or artificial memory is implemented.
 
@@ -70,7 +83,22 @@ The gradient term uses all horizontal/vertical edges, including those incident t
 
 Every control event records UTC, monotonic time, simulation step/time, and effective physical parameters; resets/restores increment an epoch. Diagnostics are sampled around once per wall second and include acquisition rate, simulation rate, energy components, amplitude, velocity, finiteness, and frame counters. Render FPS is measured independently in the UI. Logs record source, zero initial state/no RNG seed, runtime versions, negotiated mode, and camera controls. No images, luminance arrays, or source arrays are serialized.
 
+Grid, dx and fixed domain length are included in scalar events/diagnostics.
+Linux `/proc/self/status` supplies process resident memory (VmRSS) and peak
+resident memory (VmHWM), sampled about once per second. These include NumPy,
+Qt, acquisition and transient allocations; they are not merely the u/v array
+size. Peak is cumulative since process launch. Missing OS measurements are
+reported unavailable. Display colors still use every field cell; channel-wise
+conversion avoids full-grid float64 RGB temporaries without changing colors.
+
 Explicit schema-1 NPZ checkpoints contain only `u`, `v`, and JSON metadata (model, grid, parameters, sponge, step/time). Saving uses an atomic same-directory replacement. Loading disables pickle and validates archive size, member headers, model/schema, shape, dtype, finiteness, bounds, and fixed edges before replacing state. Checkpoints resume paused with coupling disabled. Display settings and input schedule remain session settings; consult the scalar log. Exact continuation is tested for a reproduced deterministic source, not for unrecorded webcam input.
+
+Schema 1 (linear) and schema 2 (sextic) already encode N; their layouts remain
+compatible. Bounded loaders now accept core grids from 17 through 1024 and at
+most `2*1024²*8 + 32768` uncompressed bytes, validating array dimensions before
+allocation. The application requires its launch grid and the sponge. A restore
+from a different grid is rejected atomically with a restart instruction, even
+when its model is otherwise supported; fields are never resized on restore.
 
 ## Modules and external interfaces
 
