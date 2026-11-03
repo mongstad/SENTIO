@@ -1,0 +1,669 @@
+{
+  "schema": 1,
+  "suite": "checks",
+  "metadata": {
+    "utc": "2026-11-03T20:05:12.778429+00:00",
+    "python": "3.14.8",
+    "numpy": "2.4.3",
+    "platform": "Linux-7.2.14-200.fc44.x86_64-x86_64-with-glibc2.43",
+    "random_seed": null,
+    "source_rate": 30,
+    "source_sha256": {
+      "sentio/field.py": "61daca4cc66e7c5529a14f267fdee3a7db2f6a4006fa720118da184c76ae6ea7",
+      "sentio/sextic.py": "2e2285828b392a8cd3ce0723e4420ba020f76140627519d871f8198cce491e14",
+      "sentio/inputs.py": "4373287ddab629bb27ef6b2d8bc1010bd6b08dd19b5884856a772d01f8f9e7d8",
+      "research/issue_3/model.py": "dee6eda4defc40612baa9e9ddad239eec065dd758d7aeef326d9d31b33789661",
+      "tools/validate_sextic_core.py": "2c31f6d56cf5d3ac914b940b237dc9e5eb8b0b7879ce00f942b65ffa2c69eb99"
+    }
+  },
+  "results": {
+    "temporal": {
+      "coarse_difference": 0.0001810263865470488,
+      "fine_difference": 4.524621261969555e-05,
+      "reduction": 4.000918000996364,
+      "cases": [
+        {
+          "case": {
+            "stimulus": "seed",
+            "n": 65,
+            "duration": 2,
+            "damping": 0.0,
+            "coupling": 0.0,
+            "model": "sextic",
+            "timestep_factor": 1,
+            "sponge": false
+          },
+          "status": "complete",
+          "error": "",
+          "steps": 960,
+          "wall_seconds": 0.28971892800109345,
+          "dt_bound": 0.0020833333333333333,
+          "initial_energy": 0.013578979588723457,
+          "final": {
+            "time": 2.0,
+            "energy": 0.013578893212327298,
+            "peak": 0.11837333765857415,
+            "minimum": -0.006259193170074588,
+            "maximum": 0.11837333765857415,
+            "input_work": 0.0,
+            "damping_loss": 0.0,
+            "balance_residual": -8.637639615886872e-08,
+            "core_fraction": 0.9249171457967906,
+            "participation": 0.06399942423147853
+          },
+          "sampled_peak": 0.1512796667060465,
+          "max_relative_balance": 9.50237593014689e-06,
+          "late_mean_retention": 0.9999948308432713,
+          "late_mean_core": 0.9470618229540901,
+          "checkpoints": [
+            {
+              "time": 0.0,
+              "energy": 0.013578979588723457,
+              "peak": 0.12,
+              "minimum": 0.0,
+              "maximum": 0.12,
+              "input_work": 0.0,
+              "damping_loss": 0.0,
+              "balance_residual": 0.0,
+              "core_fraction": 0.9443953395904428,
+              "participation": 0.0952205216977109
+            },
+            {
+              "time": 2.0,
+              "energy": 0.013578893212327298,
+              "peak": 0.11837333765857415,
+              "minimum": -0.006259193170074588,
+              "maximum": 0.11837333765857415,
+              "input_work": 0.0,
+              "damping_loss": 0.0,
+              "balance_residual": -8.637639615886872e-08,
+              "core_fraction": 0.9249171457967906,
+              "participation": 0.06399942423147853
+            }
+          ],
+          "final_u_sha256": "1bc9a0ea6629ae03b0437c8e1eec56da091e73ab529ae85b8f2ad240582c650f",
+          "final_v_sha256": "3b05e4eca8fd8b0f2e1e8941d500e43b438c01462613315c7bb89eb094f3c8cd"
+        },
+        {
+          "case": {
+            "stimulus": "seed",
+            "n": 65,
+            "duration": 2,
+            "damping": 0.0,
+            "coupling": 0.0,
+            "model": "sextic",
+            "timestep_factor": 0.5,
+            "sponge": false
+          },
+          "status": "complete",
+          "error": "",
+          "steps": 1920,
+          "wall_seconds": 0.36745793400041293,
+          "dt_bound": 0.0010416666666666667,
+          "initial_energy": 0.013578979588723457,
+          "final": {
+            "time": 1.9999999999999432,
+            "energy": 0.013578957995345566,
+            "peak": 0.1183812546624297,
+            "minimum": -0.006257499936968298,
+            "maximum": 0.1183812546624297,
+            "input_work": 0.0,
+            "damping_loss": 0.0,
+            "balance_residual": -2.1593377891315768e-08,
+            "core_fraction": 0.9249235240746979,
+            "participation": 0.06400090300697195
+          },
+          "sampled_peak": 0.15127872833129458,
+          "max_relative_balance": 2.3755148710939984e-06,
+          "late_mean_retention": 0.9999987077110389,
+          "late_mean_core": 0.9470632366125317,
+          "checkpoints": [
+            {
+              "time": 0.0,
+              "energy": 0.013578979588723457,
+              "peak": 0.12,
+              "minimum": 0.0,
+              "maximum": 0.12,
+              "input_work": 0.0,
+              "damping_loss": 0.0,
+              "balance_residual": 0.0,
+              "core_fraction": 0.9443953395904428,
+              "participation": 0.0952205216977109
+            },
+            {
+              "time": 1.9999999999999432,
+              "energy": 0.013578957995345566,
+              "peak": 0.1183812546624297,
+              "minimum": -0.006257499936968298,
+              "maximum": 0.1183812546624297,
+              "input_work": 0.0,
+              "damping_loss": 0.0,
+              "balance_residual": -2.1593377891315768e-08,
+              "core_fraction": 0.9249235240746979,
+              "participation": 0.06400090300697195
+            }
+          ],
+          "final_u_sha256": "80466a7750d9dce6579e61c8c02eb5d234e40bc98da09fa2291b535a0fa217fc",
+          "final_v_sha256": "87d7869643dd52cdf8480861ef0ba40480333dc39b84ec2ea469288e9bc34104"
+        },
+        {
+          "case": {
+            "stimulus": "seed",
+            "n": 65,
+            "duration": 2,
+            "damping": 0.0,
+            "coupling": 0.0,
+            "model": "sextic",
+            "timestep_factor": 0.25,
+            "sponge": false
+          },
+          "status": "complete",
+          "error": "",
+          "steps": 3840,
+          "wall_seconds": 0.7254776909994689,
+          "dt_bound": 0.0005208333333333333,
+          "initial_energy": 0.013578979588723457,
+          "final": {
+            "time": 1.9999999999999147,
+            "energy": 0.013578974190424037,
+            "peak": 0.11838323401739971,
+            "minimum": -0.0062570765399855436,
+            "maximum": 0.11838323401739971,
+            "input_work": 0.0,
+            "damping_loss": 0.0,
+            "balance_residual": -5.3982994203255474e-09,
+            "core_fraction": 0.9249251178869307,
+            "participation": 0.06400127265424464
+          },
+          "sampled_peak": 0.15127849369682006,
+          "max_relative_balance": 5.938737619425136e-07,
+          "late_mean_retention": 0.9999996769277761,
+          "late_mean_core": 0.9470635895968768,
+          "checkpoints": [
+            {
+              "time": 0.0,
+              "energy": 0.013578979588723457,
+              "peak": 0.12,
+              "minimum": 0.0,
+              "maximum": 0.12,
+              "input_work": 0.0,
+              "damping_loss": 0.0,
+              "balance_residual": 0.0,
+              "core_fraction": 0.9443953395904428,
+              "participation": 0.0952205216977109
+            },
+            {
+              "time": 1.9999999999999147,
+              "energy": 0.013578974190424037,
+              "peak": 0.11838323401739971,
+              "minimum": -0.0062570765399855436,
+              "maximum": 0.11838323401739971,
+              "input_work": 0.0,
+              "damping_loss": 0.0,
+              "balance_residual": -5.3982994203255474e-09,
+              "core_fraction": 0.9249251178869307,
+              "participation": 0.06400127265424464
+            }
+          ],
+          "final_u_sha256": "b5ee19078d034a24e52f0e11f0ecf9e451e11f35d39eff235853529bacab106b",
+          "final_v_sha256": "553be94f05f59470136f8761f047d6a7d3f731e8d2e5f5651df3c5939e2d9b90"
+        }
+      ]
+    },
+    "spatial": {
+      "coarse_difference": 0.05815129132156368,
+      "fine_difference": 0.015990824792476127,
+      "reduction": 3.6365410837922854,
+      "cases": [
+        {
+          "case": {
+            "stimulus": "seed",
+            "n": 64,
+            "duration": 2,
+            "damping": 0.0,
+            "coupling": 0.0,
+            "model": "sextic",
+            "timestep_factor": 0.25,
+            "sponge": false
+          },
+          "status": "complete",
+          "error": "",
+          "steps": 3840,
+          "wall_seconds": 0.6249895000000834,
+          "dt_bound": 0.0005208333333333333,
+          "initial_energy": 0.013578803533228235,
+          "final": {
+            "time": 1.9999999999999147,
+            "energy": 0.013578798138182285,
+            "peak": 0.11803174285588716,
+            "minimum": -0.00614707682785699,
+            "maximum": 0.11803174285588716,
+            "input_work": 0.0,
+            "damping_loss": 0.0,
+            "balance_residual": -5.3950459499158e-09,
+            "core_fraction": 0.9256569956580202,
+            "participation": 0.06396094947990943
+          },
+          "sampled_peak": 0.15079743022127035,
+          "max_relative_balance": 5.947625206508322e-07,
+          "late_mean_retention": 0.9999996767747452,
+          "late_mean_core": 0.9482198762646291,
+          "checkpoints": [
+            {
+              "time": 0.0,
+              "energy": 0.013578803533228235,
+              "peak": 0.11933000369953942,
+              "minimum": 0.0,
+              "maximum": 0.11933000369953942,
+              "input_work": 0.0,
+              "damping_loss": 0.0,
+              "balance_residual": 0.0,
+              "core_fraction": 0.9466268228754026,
+              "participation": 0.09517419752193221
+            },
+            {
+              "time": 1.9999999999999147,
+              "energy": 0.013578798138182285,
+              "peak": 0.11803174285588716,
+              "minimum": -0.00614707682785699,
+              "maximum": 0.11803174285588716,
+              "input_work": 0.0,
+              "damping_loss": 0.0,
+              "balance_residual": -5.3950459499158e-09,
+              "core_fraction": 0.9256569956580202,
+              "participation": 0.06396094947990943
+            }
+          ],
+          "final_u_sha256": "601bb8f745ef73d0716988056cdfd9f0afc709fb674cbf6269ebfee1e706e96c",
+          "final_v_sha256": "734bc2d1eb2c4c6a6840a3ad531bdb8659b066fd2d3b01b0691872cbb0846b97"
+        },
+        {
+          "case": {
+            "stimulus": "seed",
+            "n": 127,
+            "duration": 2,
+            "damping": 0.0,
+            "coupling": 0.0,
+            "model": "sextic",
+            "timestep_factor": 0.25,
+            "sponge": false
+          },
+          "status": "complete",
+          "error": "",
+          "steps": 3840,
+          "wall_seconds": 2.6782677459996194,
+          "dt_bound": 0.0005208333333333333,
+          "initial_energy": 0.013583067857121598,
+          "final": {
+            "time": 1.9999999999999147,
+            "energy": 0.013583062405794126,
+            "peak": 0.11843954650021905,
+            "minimum": -0.006443470477654671,
+            "maximum": 0.11843954650021905,
+            "input_work": 0.0,
+            "damping_loss": 0.0,
+            "balance_residual": -5.451327472760781e-09,
+            "core_fraction": 0.9255995185024952,
+            "participation": 0.06518681391343983
+          },
+          "sampled_peak": 0.15099596506128402,
+          "max_relative_balance": 5.735770824680231e-07,
+          "late_mean_retention": 0.9999996809142232,
+          "late_mean_core": 0.9481552242741161,
+          "checkpoints": [
+            {
+              "time": 0.0,
+              "energy": 0.013583067857121598,
+              "peak": 0.12,
+              "minimum": 0.0,
+              "maximum": 0.12,
+              "input_work": 0.0,
+              "damping_loss": 0.0,
+              "balance_residual": 0.0,
+              "core_fraction": 0.9470319175123963,
+              "participation": 0.09667464354683855
+            },
+            {
+              "time": 1.9999999999999147,
+              "energy": 0.013583062405794126,
+              "peak": 0.11843954650021905,
+              "minimum": -0.006443470477654671,
+              "maximum": 0.11843954650021905,
+              "input_work": 0.0,
+              "damping_loss": 0.0,
+              "balance_residual": -5.451327472760781e-09,
+              "core_fraction": 0.9255995185024952,
+              "participation": 0.06518681391343983
+            }
+          ],
+          "final_u_sha256": "d9e5008d3ef1361a738f03a681a9aa439f44adea97dd1ecd0d7f22ad15bfa4fb",
+          "final_v_sha256": "545408089092272a637b1edfa8283b6c7064f37c7b449bfd0008aff822bf2af7"
+        },
+        {
+          "case": {
+            "stimulus": "seed",
+            "n": 253,
+            "duration": 2,
+            "damping": 0.0,
+            "coupling": 0.0,
+            "model": "sextic",
+            "timestep_factor": 0.25,
+            "sponge": false
+          },
+          "status": "complete",
+          "error": "",
+          "steps": 3840,
+          "wall_seconds": 10.844537855000453,
+          "dt_bound": 0.0005208333333333333,
+          "initial_energy": 0.013584135815996157,
+          "final": {
+            "time": 1.9999999999999147,
+            "energy": 0.013584130359352933,
+            "peak": 0.11845381446738047,
+            "minimum": -0.006443020484244416,
+            "maximum": 0.11845381446738047,
+            "input_work": 0.0,
+            "damping_loss": 0.0,
+            "balance_residual": -5.456643224072133e-09,
+            "core_fraction": 0.9252498136411229,
+            "participation": 0.0657539695187689
+          },
+          "sampled_peak": 0.15092085119177331,
+          "max_relative_balance": 5.684159294742345e-07,
+          "late_mean_retention": 0.9999996821174559,
+          "late_mean_core": 0.9478396000018385,
+          "checkpoints": [
+            {
+              "time": 0.0,
+              "energy": 0.013584135815996157,
+              "peak": 0.12,
+              "minimum": 0.0,
+              "maximum": 0.12,
+              "input_work": 0.0,
+              "damping_loss": 0.0,
+              "balance_residual": 0.0,
+              "core_fraction": 0.9467760839599351,
+              "participation": 0.09743923439448944
+            },
+            {
+              "time": 1.9999999999999147,
+              "energy": 0.013584130359352933,
+              "peak": 0.11845381446738047,
+              "minimum": -0.006443020484244416,
+              "maximum": 0.11845381446738047,
+              "input_work": 0.0,
+              "damping_loss": 0.0,
+              "balance_residual": -5.456643224072133e-09,
+              "core_fraction": 0.9252498136411229,
+              "participation": 0.0657539695187689
+            }
+          ],
+          "final_u_sha256": "2d15041caa737d0200614ff1cc9680c38dc03c44da7fc5b4d1e0143d639e6787",
+          "final_v_sha256": "c1b80a7ebcefd138773321718dbe60504a51e937d1e884ea29140332cc2f576f"
+        }
+      ]
+    },
+    "balance": [
+      {
+        "stimulus": "seed",
+        "cases": [
+          {
+            "case": {
+              "stimulus": "seed",
+              "n": 65,
+              "duration": 4,
+              "damping": 0,
+              "coupling": 2,
+              "model": "sextic",
+              "timestep_factor": 1,
+              "sponge": false
+            },
+            "status": "complete",
+            "error": "",
+            "steps": 1920,
+            "wall_seconds": 0.3377686330004508,
+            "dt_bound": 0.0020833333333333333,
+            "initial_energy": 0.013578979588723457,
+            "final": {
+              "time": 3.9999999999998863,
+              "energy": 0.013578426517156628,
+              "peak": 0.054344831396745084,
+              "minimum": -0.0029429542701046594,
+              "maximum": 0.054344831396745084,
+              "input_work": 0.0,
+              "damping_loss": 0.0,
+              "balance_residual": -5.530715668292108e-07,
+              "core_fraction": 0.9022981095899788,
+              "participation": 0.049805407086465234
+            },
+            "sampled_peak": 0.16845744146134892,
+            "max_relative_balance": 6.482958379110495e-05,
+            "late_mean_retention": 0.9999802047852224,
+            "late_mean_core": 0.925428995185793,
+            "checkpoints": [
+              {
+                "time": 0.0,
+                "energy": 0.013578979588723457,
+                "peak": 0.12,
+                "minimum": 0.0,
+                "maximum": 0.12,
+                "input_work": 0.0,
+                "damping_loss": 0.0,
+                "balance_residual": 0.0,
+                "core_fraction": 0.9443953395904428,
+                "participation": 0.0952205216977109
+              },
+              {
+                "time": 2.0,
+                "energy": 0.013578893212327298,
+                "peak": 0.11837333765857415,
+                "minimum": -0.006259193170074588,
+                "maximum": 0.11837333765857415,
+                "input_work": 0.0,
+                "damping_loss": 0.0,
+                "balance_residual": -8.637639615886872e-08,
+                "core_fraction": 0.9249171457967906,
+                "participation": 0.06399942423147853
+              }
+            ],
+            "final_u_sha256": "84edb37f499686367e787293e0dd3f63a41558c799679e2705878bd6f83797ab",
+            "final_v_sha256": "0680e8b947c6da328ea398f2e28e34af9396f8dc7544753b5c3451cc4ac24209"
+          },
+          {
+            "case": {
+              "stimulus": "seed",
+              "n": 65,
+              "duration": 4,
+              "damping": 0,
+              "coupling": 2,
+              "model": "sextic",
+              "timestep_factor": 0.5,
+              "sponge": false
+            },
+            "status": "complete",
+            "error": "",
+            "steps": 3840,
+            "wall_seconds": 0.6702654789987719,
+            "dt_bound": 0.0010416666666666667,
+            "initial_energy": 0.013578979588723457,
+            "final": {
+              "time": 3.9999999999998295,
+              "energy": 0.01357884138877203,
+              "peak": 0.05436994764465326,
+              "minimum": -0.0029412754170057283,
+              "maximum": 0.05436994764465326,
+              "input_work": 0.0,
+              "damping_loss": 0.0,
+              "balance_residual": -1.381999514271648e-07,
+              "core_fraction": 0.902305201896725,
+              "participation": 0.049808377547518115
+            },
+            "sampled_peak": 0.16845245700996841,
+            "max_relative_balance": 1.6208145662082102e-05,
+            "late_mean_retention": 0.9999950512869934,
+            "late_mean_core": 0.9254345443535246,
+            "checkpoints": [
+              {
+                "time": 0.0,
+                "energy": 0.013578979588723457,
+                "peak": 0.12,
+                "minimum": 0.0,
+                "maximum": 0.12,
+                "input_work": 0.0,
+                "damping_loss": 0.0,
+                "balance_residual": 0.0,
+                "core_fraction": 0.9443953395904428,
+                "participation": 0.0952205216977109
+              },
+              {
+                "time": 1.9999999999999432,
+                "energy": 0.013578957995345566,
+                "peak": 0.1183812546624297,
+                "minimum": -0.006257499936968298,
+                "maximum": 0.1183812546624297,
+                "input_work": 0.0,
+                "damping_loss": 0.0,
+                "balance_residual": -2.1593377891315768e-08,
+                "core_fraction": 0.9249235240746979,
+                "participation": 0.06400090300697195
+              }
+            ],
+            "final_u_sha256": "d0761ebb965521bf0ea3c6b38f151afd5dc0bbca3821c1b580d75726b04ea6c4",
+            "final_v_sha256": "f2604bb691d770e07ab02c2e16d6eff4bfe0d131b3de00a5e1aab8e3d204f2c3"
+          }
+        ],
+        "reduction": 3.9998149783888928
+      },
+      {
+        "stimulus": "stationary",
+        "cases": [
+          {
+            "case": {
+              "stimulus": "stationary",
+              "n": 65,
+              "duration": 4,
+              "damping": 0.4,
+              "coupling": 2,
+              "model": "sextic",
+              "timestep_factor": 1,
+              "sponge": true
+            },
+            "status": "complete",
+            "error": "",
+            "steps": 1920,
+            "wall_seconds": 0.39223286299966276,
+            "dt_bound": 0.0020833333333333333,
+            "initial_energy": 0.0,
+            "final": {
+              "time": 3.9999999999998863,
+              "energy": 0.00020822462548928533,
+              "peak": 0.01523591546928721,
+              "minimum": -0.015147029644703549,
+              "maximum": 0.01523591546928721,
+              "input_work": 0.0003746802205335062,
+              "damping_loss": 0.00016643595241387456,
+              "balance_residual": -1.964263034629041e-08,
+              "core_fraction": 0.610269616854885,
+              "participation": 0.055553318703368645
+            },
+            "sampled_peak": 0.02543327327063718,
+            "max_relative_balance": 2.9986092392854107e-05,
+            "late_mean_retention": null,
+            "late_mean_core": 0.577324022405407,
+            "checkpoints": [
+              {
+                "time": 0.0,
+                "energy": 0.0,
+                "peak": 0.0,
+                "minimum": 0.0,
+                "maximum": 0.0,
+                "input_work": 0.0,
+                "damping_loss": 0.0,
+                "balance_residual": 0.0,
+                "core_fraction": null,
+                "participation": null
+              },
+              {
+                "time": 2.0,
+                "energy": 0.00021690125396958194,
+                "peak": 0.013753971323542374,
+                "minimum": -0.01371096217551351,
+                "maximum": 0.013753971323542374,
+                "input_work": 0.0003302317795352554,
+                "damping_loss": 0.00011331374693390263,
+                "balance_residual": -1.6778631770842842e-08,
+                "core_fraction": 0.5018453550427557,
+                "participation": 0.08338262660493483
+              }
+            ],
+            "final_u_sha256": "c88c05ad2c7089aca7bd2f29d1cc40ec3a1f5428194a2190a7aa1e0d727dd335",
+            "final_v_sha256": "726ed3d2de8514986997fd9879c3ff2c1955f30eba0d0067cb55e57c54fc2c92"
+          },
+          {
+            "case": {
+              "stimulus": "stationary",
+              "n": 65,
+              "duration": 4,
+              "damping": 0.4,
+              "coupling": 2,
+              "model": "sextic",
+              "timestep_factor": 0.5,
+              "sponge": true
+            },
+            "status": "complete",
+            "error": "",
+            "steps": 3840,
+            "wall_seconds": 0.7269167539998307,
+            "dt_bound": 0.0010416666666666667,
+            "initial_energy": 0.0,
+            "final": {
+              "time": 3.9999999999998295,
+              "energy": 0.00020822153273372744,
+              "peak": 0.01523581061793694,
+              "minimum": -0.015146810287028233,
+              "maximum": 0.01523581061793694,
+              "input_work": 0.00037467570807715874,
+              "damping_loss": 0.00016644926467097263,
+              "balance_residual": -4.910672458675446e-09,
+              "core_fraction": 0.6102715199862385,
+              "participation": 0.055553854405538956
+            },
+            "sampled_peak": 0.025433589728089904,
+            "max_relative_balance": 7.4965285462979414e-06,
+            "late_mean_retention": null,
+            "late_mean_core": 0.577321859402928,
+            "checkpoints": [
+              {
+                "time": 0.0,
+                "energy": 0.0,
+                "peak": 0.0,
+                "minimum": 0.0,
+                "maximum": 0.0,
+                "input_work": 0.0,
+                "damping_loss": 0.0,
+                "balance_residual": 0.0,
+                "core_fraction": null,
+                "participation": null
+              },
+              {
+                "time": 1.9999999999999432,
+                "energy": 0.00021691796002107488,
+                "peak": 0.013754258840758099,
+                "minimum": -0.013711324446093517,
+                "maximum": 0.013754258840758099,
+                "input_work": 0.00033024368095462014,
+                "damping_loss": 0.00011332152634037297,
+                "balance_residual": -4.194593172286579e-09,
+                "core_fraction": 0.5018455428155708,
+                "participation": 0.08338466833012188
+              }
+            ],
+            "final_u_sha256": "9b553667ab20e5d8db105bbb280e5543cb02dad979c2ea24a41b7a3733d178b5",
+            "final_v_sha256": "15c71be5e48bb8f832523e78aae1c7df836a43685ecb522e17dd5638ca68ef9b"
+          }
+        ],
+        "reduction": 3.9999970930094477
+      }
+    ]
+  }
+}

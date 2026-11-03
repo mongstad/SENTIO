@@ -8,6 +8,8 @@ import unittest
 
 import numpy as np
 from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import Qt
+from PySide6.QtTest import QTest
 from sentio.gui import Window, signed_rgb
 from sentio.runtime import Runtime
 
@@ -35,6 +37,51 @@ class GuiTests(unittest.TestCase):
         np.testing.assert_array_equal(rgb[0, 4], [255, 127, 51])
         np.testing.assert_array_equal(rgb[0, 0], rgb[0, 1])
         np.testing.assert_array_equal(u, before)
+
+    def test_sextic_typed_controls_transitions_and_checkpoint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = Runtime(model="sextic", log_path=Path(directory)/"sextic-gui.jsonl")
+            window = Window(runtime)
+            runtime.start()
+            window.show()
+            try:
+                self.wait_for(lambda: runtime.latest() is not None and runtime.latest()["diagnostics"]["step"] > 10)
+                self.assertIn("Soft sextic", window.windowTitle())
+                self.assertIn("Validity |u|", window.diagnostics.text())
+                omega = window.controls["omega"]
+                omega.setFocus()
+                omega.selectAll()
+                QTest.keyClicks(omega, "12")
+                self.assertEqual(runtime.latest()["nonlinear"]["omega"], 8)
+                QTest.keyClick(omega, Qt.Key.Key_Return)
+                self.wait_for(lambda: runtime.latest()["nonlinear"]["omega"] == 12)
+                window.seed.click()
+                self.wait_for(lambda: runtime.latest()["paused"] and runtime.latest()["parameters"]["coupling"] == 0)
+                self.wait_for(lambda: omega.value() == 8)
+                before = runtime.latest()["u"].copy()
+                amplitude = window.controls["amplitude"]
+                amplitude.setValue(.001)
+                self.wait_for(lambda: "Rejected parameters" in runtime.latest()["message"])
+                self.assertEqual(runtime.latest()["nonlinear"]["amplitude"], .1)
+                np.testing.assert_array_equal(runtime.latest()["u"], before)
+                checkpoint = str(Path(directory)/"gui.npz")
+                window.send("save", checkpoint)
+                self.wait_for(lambda: Path(checkpoint).exists())
+                index = window.model_combo.findData("linear")
+                window.model_combo.activated.emit(index)
+                self.wait_for(lambda: runtime.latest()["model"] == "linear")
+                self.assertTrue(runtime.latest()["paused"])
+                self.assertFalse(runtime.latest()["coupling_enabled"])
+                self.wait_for(lambda: not omega.isEnabled())
+                self.assertIn("model s/wall s", window.live_status.text())
+                window.send("load", checkpoint)
+                self.wait_for(lambda: runtime.latest()["model"] == "sextic")
+                np.testing.assert_array_equal(runtime.latest()["u"], before)
+                self.wait_for(lambda: omega.isEnabled())
+            finally:
+                window.close()
+                self.app.processEvents()
+            self.assertFalse(runtime.failure)
 
     def test_live_widgets_pause_hot_controls_reset_and_shutdown(self):
         with tempfile.TemporaryDirectory() as directory:
