@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "started_utc": "2026-11-03T17:23:02.531372+00:00",
+  "source": "camera",
+  "python": "3.14.8",
+  "numpy": "2.4.3",
+  "platform": "Linux-7.2.14-200.fc44.x86_64-x86_64-with-glibc2.43",
+  "initial_parameters": {
+    "speed": 0.3,
+    "damping": 0.4,
+    "coupling": 2.0
+  },
+  "observed_seconds": 333.23938569999973,
+  "diagnostics_count": 326,
+  "all_finite": true,
+  "peak": 2.0661397606187215,
+  "final_diagnostics": {
+    "step": 79945,
+    "simulation_time": 333.1041666664459,
+    "dt": 0.004166666666666667,
+    "cfl": 0.31875000000000003,
+    "peak": 1.1888255306695832,
+    "velocity_peak": 0.07555555529444745,
+    "energy": 0.4232421295667768,
+    "kinetic": 0.00045233309841956316,
+    "potential": 0.42278979646835724,
+    "finite": true
+  },
+  "skipped_wall_seconds": 0.0,
+  "session_closed": false,
+  "errors": [],
+  "control_events": [],
+  "capture_fps": {
+    "min": 29.922431683624175,
+    "median": 29.986737829475153,
+    "max": 30.032566508626836
+  },
+  "simulation_steps_per_second": {
+    "min": 239.23400644336309,
+    "median": 239.92639466080217,
+    "max": 240.97037751158072
+  },
+  "simulation_seconds_per_second": {
+    "min": 0.9968083601806772,
+    "median": 0.9996933110866735,
+    "max": 1.0040432396315842
+  },
+  "camera": {
+    "card": "C922 Pro Stream Webcam",
+    "mode": {
+      "width": 640,
+      "height": 480,
+      "fourcc": "YUYV",
+      "fps": 30.0,
+      "stride": 1280,
+      "sizeimage": 614400,
+      "colorspace": 8,
+      "quantization": 0,
+      "transfer": 1
+    },
+    "controls_at_open": {
+      "exposure_auto": {
+        "requested": 1,
+        "actual": 1,
+        "original": 1
+      },
+      "exposure_auto_priority": {
+        "requested": 0,
+        "actual": 0,
+        "original": 0
+      },
+      "exposure_absolute": {
+        "requested": 156,
+        "actual": 156,
+        "original": 82
+      },
+      "focus_auto": {
+        "requested": 0,
+        "actual": 0,
+        "original": 1
+      },
+      "white_balance_auto": {
+        "requested": 0,
+        "actual": 0,
+        "original": 1
+      },
+      "white_balance_temperature": {
+        "requested": 4500,
+        "actual": 4500,
+        "original": 2722
+      }
+    },
+    "buffers": 3
+  },
+  "capture_counters": {
+    "frames": 9981,
+    "driver_drops": 0,
+    "drained_discards": 0,
+    "bad_frames": 0,
+    "mailbox_discards": 0,
+    "timestamp_kind": "driver-monotonic"
+  }
+}

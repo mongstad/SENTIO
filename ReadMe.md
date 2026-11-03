@@ -6,7 +6,42 @@ The experiment asks whether interference and continuing field evolution produce 
 
 ## Current status
 
-**Design / prototype 1 — not yet implemented.** Initial hardware validation is complete, but the field application is still to be built.
+**Prototype 1 implemented; awaiting owner review.** The separate `sentio` Python application couples live C922 luminance to a continuing linear 2D field. Synthetic numerical tests and a sustained live-camera run have been performed; see [validation and limitations](docs/VALIDATION.md). No recognition or learning claim is made.
+
+### Run on Fedora 44
+
+From this checkout, install the open-source CPU/Qt dependencies and first run the synthetic control:
+
+```bash
+sudo dnf install python3 python3-pip python3-numpy python3-pyside6 v4l-utils
+python3 -m unittest discover -s tests -v
+python3 -m sentio --source stationary
+```
+
+Then close the synthetic window and enable the camera explicitly:
+
+```bash
+python3 -m sentio --list-devices
+python3 -m sentio --source camera
+```
+
+The application discovers a unique C922 capture node, preferring `/dev/v4l/by-id/`. With multiple cameras, pass the selected persistent path using `--device /dev/v4l/by-id/...`. `/dev/video0` remains usable as an explicit, temporary selection. Run as your desktop user with camera access, not as root. Close other applications using the camera. The Codex sandbox may hide video devices; launch from a normal desktop terminal in that case.
+
+For a virtual environment using the exact exercised Python package versions:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-tested.txt
+python -m pip install --no-deps -e .
+sentio --source camera
+```
+
+The field uses blue for negative values, dark gray for zero, and orange for positive values. **Display range** and **Display intensity** change only the color mapping; the legend shows the effective clipping threshold and clipped fraction. The default fixed range is ±2 for camera input and ±0.2 for synthetic input. Use **Enable input coupling** for a no-input control without clearing the field. **Pause** freezes integration while acquisition continues; **Reset** zeros amplitude, velocity, simulation time, and step, retaining settings. The optional camera preview is separately labeled and disabled initially.
+
+Use **Save state** explicitly to save amplitude, velocity, model settings, and simulation clock. **Restore** validates the checkpoint and opens it paused with coupling off; enable coupling and resume when ready. No frame history is saved, and restoring cannot reproduce unrecorded camera stimuli. Normal window close stops acquisition and attempts to restore changed camera controls.
+
+Scalar-only JSONL logs are written under ignored `runs/`; checkpoints are also ignored by Git. Camera frames stay in memory. [Model and implementation](docs/MODEL.md), [experiments](docs/EXPERIMENTS.md), and [reference review](docs/REFERENCE_REVIEW.md) describe the assumptions and reproduction procedure.
 
 ### Hardware baseline
 
@@ -28,7 +63,7 @@ The experiment asks whether interference and continuing field evolution produce 
 
 The field is a *simulation driven by camera measurements*, not a reconstruction of the original optical wavefront. We will test the resulting dynamics without prescribing what structures should appear.
 
-### Planned live controls
+### Live controls
 
 Wave speed, damping, camera coupling, visualization range/intensity, pause/resume, field reset, and camera-coupling on/off. Changes to numerical parameters must be bounded to preserve integrator stability and must be logged alongside simulation time/step.
 
