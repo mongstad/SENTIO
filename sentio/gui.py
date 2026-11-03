@@ -249,8 +249,8 @@ class Window(QMainWindow):
         state = "FAULT" if snap["fault"] else "PAUSED" if snap["paused"] else "FINITE"
         self.live_status.setText(
             f"{MODEL_LABELS[snap['model']]} · {state} · {snap['grid']}×{snap['grid']} field\n"
-            f"Camera / source {c.get('fps', 0):.2f} FPS · simulation {snap['steps_per_second']:.0f} steps/s · "
-            f"{snap['sim_speed']:.2f} model s/wall s · display {render_fps:.1f} FPS")
+            f"Camera / source {c.get('fps', 0):.2f} FPS · simulation {snap['steps_per_second']:.1f} steps/s · "
+            f"{snap['sim_speed']:.4g} model s/wall s · display {render_fps:.1f} FPS")
         memory = snap["memory"]
         memory_text = (f"Process RSS {memory['resident_mib']:.1f} MiB · peak {memory['peak_resident_mib']:.1f} MiB"
                        if all(v is not None for v in memory.values()) else "Process memory unavailable")
@@ -273,7 +273,7 @@ class Window(QMainWindow):
             f"Field energy {d['energy']:.6g} (not conserved with forcing / damping)\n"
             + nonlinear +
             f"dt {d['dt']:.6f} s · CFL {d['cfl']:.3f} ≤ 0.566\n"
-            f"Simulation {snap['steps_per_second']:.1f} steps/s · {snap['sim_speed']:.2f} sim s/wall s\n"
+            f"Simulation {snap['steps_per_second']:.1f} steps/s · {snap['sim_speed']:.4g} sim s/wall s\n"
             f"Acquisition {c.get('fps', 0):.2f} FPS · display {render_fps:.1f} FPS\n"
             f"Driver drops {c.get('driver_drops', 0)} · bad frames {c.get('bad_frames', 0)}\n"
             f"Latest-frame discards {c.get('mailbox_discards', 0) + c.get('drained_discards', 0)}\n"

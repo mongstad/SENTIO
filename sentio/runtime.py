@@ -18,7 +18,7 @@ from . import __version__
 from .camera import V4L2Camera
 from .inputs import SYNTHETIC_MODES, luminance_source, synthetic_source
 from .models import MODEL_IDS, create_field, load_field, model_name
-from .grid import DEFAULT_GRID, application_grid
+from .grid import DEFAULT_GRID, GRID_SIZES, application_grid
 from .metrics import process_memory
 
 
@@ -193,9 +193,12 @@ class Engine:
                 self.field.save(value)
             elif name == "load":
                 loaded = load_field(value)
-                if loaded.n != self.field.n or not loaded.sponge:
-                    raise ValueError(f"Checkpoint must match this {self.field.n}x{self.field.n} session with sponge; "
-                                     f"for another grid restart with --grid {loaded.n}")
+                if not loaded.sponge:
+                    raise ValueError("Application checkpoints require sponge boundaries")
+                if loaded.n != self.field.n:
+                    hint = (f"restart with --grid {loaded.n}" if loaded.n in GRID_SIZES else
+                            f"grid {loaded.n} is not a supported application size; choose {GRID_SIZES}")
+                    raise ValueError(f"Checkpoint must match this {self.field.n}x{self.field.n} session; {hint}")
                 self.field = loaded
                 self.paused, self.coupling_enabled, self.fault = True, False, ""
                 self.epoch += 1

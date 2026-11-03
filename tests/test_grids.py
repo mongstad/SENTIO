@@ -1,5 +1,4 @@
 import io
-import json
 from pathlib import Path
 import tempfile
 import threading
@@ -111,6 +110,16 @@ class GridTests(unittest.TestCase):
             self.assertEqual(e.field.n, 1024)
             self.assertTrue(e.paused)
             self.assertFalse(e.coupling_enabled)
+            original = e.field
+            Field(33).save(path)
+            e.command("load", str(path))
+            self.assertIs(e.field, original)
+            self.assertIn("not a supported application size", e.message)
+            self.assertNotIn("--grid 33", e.message)
+            Field(1024, sponge=False).save(path)
+            e.command("load", str(path))
+            self.assertIs(e.field, original)
+            self.assertIn("require sponge boundaries", e.message)
 
     def test_oversized_array_header_rejected_before_allocation(self):
         with tempfile.TemporaryDirectory() as directory:

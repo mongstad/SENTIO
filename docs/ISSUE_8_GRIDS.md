@@ -60,8 +60,8 @@ No solver arithmetic or time-step criterion was rewritten for speed.
 
 ## Numerical verification
 
-**64 tests passed, zero skipped**, both normally (7.458 s) and with
-`PYTHONNOUSERSITE=1` (7.513 s). All previously accepted tests passed. New coverage
+**64 tests passed, zero skipped** on the final code, both normally (9.958 s) and
+with `PYTHONNOUSERSITE=1` (10.191 s). All previously accepted tests passed. New coverage
 includes grid/default bounds, full-size source conversion, fixed edges and
 continuing forcing/cessation, capture shape/mode, larger checkpoint continuation,
 atomic cross-grid restore rejection and oversized headers. Compile and whitespace
@@ -156,6 +156,13 @@ Reports with exact source hashes/settings are in [evidence/issue-8](evidence/iss
 baseline replay summary. The exploratory 1024² run before the RGB allocation
 change is retained locally under ignored `runs/issue8/`, outside the final table.
 
+The benchmark/source hashes match immutable revision `b8f98a0`. The subsequent
+review correction only distinguishes unsupported-grid/sponge restore errors
+from valid restart hints and prints slow model-time rates to four significant
+digits. It does not change numerical evolution, resampling, rendering colors
+or scheduling. The already-open owner window uses the measured build; restart
+to obtain these final message/precision improvements.
+
 ## Owner use and remaining limits
 
 Close the existing camera window before another launch:
@@ -165,6 +172,7 @@ python3 -m sentio --source camera --model sextic --grid 512
 python3 -m sentio --source camera --model sextic --grid 1024
 # Omit --model for the accepted linear default; omit --grid for 256².
 python3 -m unittest discover -s tests -v
+PYTHONNOUSERSITE=1 python3 -m unittest discover -s tests -v
 python3 -m tools.validate_grids --output runs/issue8-owner/numerical.json
 python3 -m tools.validate_live_gui --grid 512 --output runs/issue8-owner/live-512.json
 ```
