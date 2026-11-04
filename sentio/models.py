@@ -7,16 +7,17 @@ import numpy as np
 
 from .field import Field
 from .sextic import MODEL as SEXTIC_ID, SexticField
+from .grid import DEFAULT_GRID, MAX_CHECKPOINT_BYTES
 
 
 MODEL_LABELS = {"linear": "Linear (default)", "sextic": "Soft sextic (experimental)"}
 MODEL_IDS = {"linear": "linear-wave-verlet-sponge-v1", "sextic": SEXTIC_ID}
 
 
-def create_field(model):
+def create_field(model, n=DEFAULT_GRID):
     if model not in MODEL_LABELS:
         raise ValueError(f"unknown field model: {model}")
-    return SexticField() if model == "sextic" else Field()
+    return SexticField(n) if model == "sextic" else Field(n)
 
 
 def model_name(field):
@@ -29,7 +30,7 @@ def load_field(path):
     with zipfile.ZipFile(path) as archive:
         if (len(archive.infolist()) != 3
                 or set(archive.namelist()) != {"u.npy", "v.npy", "metadata.npy"}
-                or sum(i.file_size for i in archive.infolist()) > 2_000_000):
+                or sum(i.file_size for i in archive.infolist()) > MAX_CHECKPOINT_BYTES):
             raise ValueError("invalid or oversized checkpoint")
         with archive.open("metadata.npy") as member:
             if np.lib.format.read_magic(member) != (1, 0):

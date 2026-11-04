@@ -1,0 +1,28 @@
+{
+  "base_commit": "44e1d11160ba40be3f4493798805fe003fec631f",
+  "numpy": "2.4.3",
+  "checks": [
+    {
+      "model": "field",
+      "grid": 256,
+      "steps": 120,
+      "source": "moving refreshed every four steps at t=(step//4)/30",
+      "time": 0.49999999999999944,
+      "dt": 0.004166666666666667,
+      "arrays_exact": true,
+      "u_sha256": "92032113320cdd40c355a5159c93232918392d01195b083b0b308d72809ee3d1",
+      "v_sha256": "251a29d6e90a49c943a496fdb78df3a220f35e868e3a9641ebe93864ed77b6f5"
+    },
+    {
+      "model": "sextic",
+      "grid": 256,
+      "steps": 120,
+      "source": "moving refreshed every four steps at t=(step//4)/30",
+      "time": 0.24999999999999972,
+      "dt": 0.0020833333333333333,
+      "arrays_exact": true,
+      "u_sha256": "34e319b56302e31cf61df55e3ef0dd6d5f38bb1dc6fef5e75887fa817fc8b6dc",
+      "v_sha256": "0caa54dd097be85fb85ccac2a2ac857aa41413a0c76d813b2fd6c9abc0c3983d"
+    }
+  ]
+}

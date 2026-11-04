@@ -10,6 +10,8 @@ import zipfile
 
 import numpy as np
 
+from .grid import DEFAULT_GRID, MAX_GRID, MAX_CHECKPOINT_BYTES
+
 
 @dataclass(frozen=True)
 class Parameters:
@@ -32,9 +34,9 @@ class Field:
     surround a velocity-Verlet wave/forcing step. Forcing is held per step.
     """
 
-    def __init__(self, n=256, parameters=None, sponge=True):
-        if type(n) is not int or not 17 <= n <= 256:
-            raise ValueError("grid must be an integer from 17 through 256")
+    def __init__(self, n=DEFAULT_GRID, parameters=None, sponge=True):
+        if type(n) is not int or not 17 <= n <= MAX_GRID:
+            raise ValueError(f"grid must be an integer from 17 through {MAX_GRID}")
         self.n = n
         self.dx = 1.0 / (n - 1)
         self.parameters = parameters or Parameters()
@@ -97,7 +99,8 @@ class Field:
         kinetic = 0.5 * self.dx**2 * float(np.sum(self.v**2))
         potential = 0.5 * self.parameters.speed**2 * float(
             np.sum(np.diff(self.u, axis=0)**2) + np.sum(np.diff(self.u, axis=1)**2))
-        return dict(step=self.step_count, simulation_time=self.time, dt=self.dt,
+        return dict(n=self.n, dx=self.dx, domain_length=1.0,
+                    step=self.step_count, simulation_time=self.time, dt=self.dt,
                     cfl=self.parameters.speed * self.dt / self.dx,
                     peak=float(np.max(np.abs(self.u))),
                     velocity_peak=float(np.max(np.abs(self.v))),
@@ -132,7 +135,7 @@ class Field:
     def load(cls, path):
         # Bound decompression before NumPy allocates anything; never unpickle.
         with zipfile.ZipFile(path) as archive:
-            if len(archive.infolist()) != 3 or sum(i.file_size for i in archive.infolist()) > 2_000_000:
+            if len(archive.infolist()) != 3 or sum(i.file_size for i in archive.infolist()) > MAX_CHECKPOINT_BYTES:
                 raise ValueError("invalid or oversized checkpoint")
             if set(archive.namelist()) != {"u.npy", "v.npy", "metadata.npy"}:
                 raise ValueError("invalid checkpoint members")
@@ -145,7 +148,7 @@ class Field:
                     if name == "metadata.npy":
                         valid = shape == () and dtype.kind == "U" and dtype.itemsize <= 10000
                     else:
-                        valid = len(shape) == 2 and shape[0] == shape[1] and 17 <= shape[0] <= 256 and dtype == np.float64
+                        valid = len(shape) == 2 and shape[0] == shape[1] and 17 <= shape[0] <= MAX_GRID and dtype == np.float64
                     if not valid:
                         raise ValueError("invalid checkpoint array header")
         with np.load(path, allow_pickle=False) as data:

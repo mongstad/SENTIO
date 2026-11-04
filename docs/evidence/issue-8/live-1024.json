@@ -1,0 +1,422 @@
+{
+  "utc": "2026-11-03T21:17:13.605895+00:00",
+  "source": "camera",
+  "grid": 1024,
+  "qt_platform": "wayland",
+  "visible": true,
+  "python": "3.14.8",
+  "numpy": "2.4.3",
+  "source_sha256": {
+    "sentio/__init__.py": "5d402c952b53de6637a0c8de5a8a15f445a3129c38b9fb86799b051220a6e50a",
+    "sentio/camera.py": "5b071401b9f3a9c6d9c386016f22f2717280b3f5e44f96fa8a152f043bbbb4af",
+    "sentio/field.py": "3b75d7f588d2b8ab63a03ed6668d11ad80d1e46e42502526976440f87b30b85b",
+    "sentio/inputs.py": "7d3acaec25dbd92162a594ee9e6edb4c9fcc4e3be0c35c3d62f5f58754c1ea7b",
+    "sentio/__main__.py": "673dc0f622dee9fbdc91889f9113b653079c6e03d1c9442226fb534913adee52",
+    "sentio/gui.py": "3543b02f6958aed1419507967a9a74ad2a55789eca62b6fb31ed3ef1a924310b",
+    "sentio/models.py": "1c46b73e73564c9bffd4412d86a5c577583503e997dc155f1a967344ae5f09ec",
+    "sentio/runtime.py": "6524ab39f73b83b7c916e56ffeefc2cde48a9b2c76c5035e148e4e1df4d6c1bd",
+    "sentio/sextic.py": "0b99caf582401fce268f5f1518a0fb08820d67d16047928e70ebc7c979a9918a",
+    "sentio/grid.py": "a751d2cb05eaee22e22cc69ad27e12e9a9a7e8e7cb4a2354d05b3b4895cca62d",
+    "sentio/metrics.py": "733804facfb6c778ff7742c62bd5368b26700a318ec18209a77ddbc45536fb6a",
+    "tools/validate_live_gui.py": "03b62903577c5d23e4e317a9a8918a4a2e8d4ab0fb863f87e429d6ff45853331"
+  },
+  "scalar_log": "runs/20261103T211632Z-dd778e55.jsonl",
+  "checks": [
+    "pause freezes field while acquisition continues",
+    "display controls preserve physical state",
+    "sextic save/reset/restore exact, paused and uncoupled",
+    "uncoupled field continues evolving",
+    "both model transitions reset, pause and disable coupling"
+  ],
+  "controls": [
+    {
+      "name": "parameters",
+      "value": {
+        "omega": 10
+      },
+      "acknowledgement_seconds": 0.4116304989984201,
+      "message": "Applied parameters",
+      "model": "sextic"
+    },
+    {
+      "name": "parameters",
+      "value": {
+        "amplitude": 0.12
+      },
+      "acknowledgement_seconds": 0.4893025370001851,
+      "message": "Applied parameters",
+      "model": "sextic"
+    },
+    {
+      "name": "parameters",
+      "value": {
+        "speed": 0.35
+      },
+      "acknowledgement_seconds": 0.49995013199804816,
+      "message": "Applied parameters",
+      "model": "sextic"
+    },
+    {
+      "name": "parameters",
+      "value": {
+        "damping": 0.5
+      },
+      "acknowledgement_seconds": 0.6442029350000666,
+      "message": "Applied parameters",
+      "model": "sextic"
+    },
+    {
+      "name": "parameters",
+      "value": {
+        "coupling": 1.5
+      },
+      "acknowledgement_seconds": 0.6093073500014725,
+      "message": "Applied parameters",
+      "model": "sextic"
+    },
+    {
+      "name": "paused",
+      "value": true,
+      "acknowledgement_seconds": 0.22524041500219028,
+      "message": "Applied paused",
+      "model": "sextic"
+    },
+    {
+      "name": "display_range",
+      "value": 0.025,
+      "acknowledgement_seconds": 0.13943009300055564,
+      "message": "Applied display_range",
+      "model": "sextic"
+    },
+    {
+      "name": "intensity",
+      "value": 1.5,
+      "acknowledgement_seconds": 0.1451134369999636,
+      "message": "Applied intensity",
+      "model": "sextic"
+    },
+    {
+      "name": "save",
+      "value": "runs/issue8/live-1024.npz",
+      "acknowledgement_seconds": 0.3703883410016715,
+      "message": "Applied save",
+      "model": "sextic"
+    },
+    {
+      "name": "reset",
+      "value": null,
+      "acknowledgement_seconds": 0.1502946319997136,
+      "message": "Applied reset",
+      "model": "sextic"
+    },
+    {
+      "name": "load",
+      "value": "runs/issue8/live-1024.npz",
+      "acknowledgement_seconds": 0.2991729599998507,
+      "message": "Applied load; paused, coupling off",
+      "model": "sextic"
+    },
+    {
+      "name": "paused",
+      "value": false,
+      "acknowledgement_seconds": 0.2414459200008423,
+      "message": "Applied paused",
+      "model": "sextic"
+    },
+    {
+      "name": "model",
+      "value": "linear",
+      "acknowledgement_seconds": 0.15677275900088716,
+      "message": "Applied model; paused, coupling off; model defaults, zero state on change; display range retained",
+      "model": "linear"
+    },
+    {
+      "name": "display_range",
+      "value": 0.05,
+      "acknowledgement_seconds": 0.06615296699965256,
+      "message": "Applied display_range",
+      "model": "linear"
+    },
+    {
+      "name": "intensity",
+      "value": 1,
+      "acknowledgement_seconds": 0.05936631700024009,
+      "message": "Applied intensity",
+      "model": "linear"
+    },
+    {
+      "name": "coupling_enabled",
+      "value": true,
+      "acknowledgement_seconds": 0.057665157997689676,
+      "message": "Applied coupling_enabled",
+      "model": "linear"
+    },
+    {
+      "name": "paused",
+      "value": false,
+      "acknowledgement_seconds": 0.1465119999993476,
+      "message": "Applied paused",
+      "model": "linear"
+    },
+    {
+      "name": "model",
+      "value": "sextic",
+      "acknowledgement_seconds": 0.2683942430012394,
+      "message": "Applied model; paused, coupling off; model defaults, zero state on change; display range retained",
+      "model": "sextic"
+    },
+    {
+      "name": "coupling_enabled",
+      "value": true,
+      "acknowledgement_seconds": 0.10447421799835865,
+      "message": "Applied coupling_enabled",
+      "model": "sextic"
+    },
+    {
+      "name": "paused",
+      "value": false,
+      "acknowledgement_seconds": 0.35191335800118395,
+      "message": "Applied paused",
+      "model": "sextic"
+    }
+  ],
+  "measurements": {
+    "sextic_initial": {
+      "camera_fps": {
+        "min": 29.764818795794266,
+        "median": 30.00736125581825,
+        "max": 30.23846509163052
+      },
+      "steps_per_second": {
+        "min": 4.268042397629733,
+        "median": 4.479492768324049,
+        "max": 4.537873656235982
+      },
+      "model_seconds_per_wall_second": {
+        "min": 0.007726165558844797,
+        "median": 0.008108940709431555,
+        "max": 0.008214623915795779
+      },
+      "input_age_ms": {
+        "min": 58.80755600082921,
+        "median": 80.36404399899766,
+        "max": 114.55247100093402
+      },
+      "display_fps": {
+        "min": 12.125298324456622,
+        "median": 12.268303382152792,
+        "max": 12.365251651691713
+      },
+      "event_loop_gap_ms": {
+        "min": 65.21380200138083,
+        "median": 81.16327399693546,
+        "max": 95.70132400040166
+      },
+      "resident_mib": {
+        "min": 281.26171875,
+        "median": 307.4921875,
+        "max": 348.34765625
+      },
+      "peak_resident_mib": {
+        "min": 388.2265625,
+        "median": 388.2265625,
+        "max": 388.2265625
+      },
+      "skipped_wall_seconds": {
+        "min": 5.082281545218086,
+        "median": 8.45972410973338,
+        "max": 11.955137718881623
+      },
+      "peak": {
+        "min": 0.0013334313046050649,
+        "median": 0.0036994156534256293,
+        "max": 0.007372498434064786
+      }
+    },
+    "linear": {
+      "camera_fps": {
+        "min": 29.755170744094766,
+        "median": 30.038350806513094,
+        "max": 30.265854531156762
+      },
+      "steps_per_second": {
+        "min": 7.4144039685198875,
+        "median": 7.924389736477706,
+        "max": 8.47055544529983
+      },
+      "model_seconds_per_wall_second": {
+        "min": 0.01366640684156888,
+        "median": 0.014606424814411115,
+        "max": 0.015613130520138534
+      },
+      "input_age_ms": {
+        "min": 63.321824000013294,
+        "median": 84.6006559986563,
+        "max": 122.64470499940217
+      },
+      "display_fps": {
+        "min": 12.279067025710965,
+        "median": 12.51414970444743,
+        "max": 12.641380356331624
+      },
+      "event_loop_gap_ms": {
+        "min": 58.1893870003114,
+        "median": 80.53907999965304,
+        "max": 95.1469250030641
+      },
+      "resident_mib": {
+        "min": 301.96484375,
+        "median": 331.6484375,
+        "max": 372.27734375
+      },
+      "peak_resident_mib": {
+        "min": 390.53515625,
+        "median": 390.53515625,
+        "max": 390.53515625
+      },
+      "skipped_wall_seconds": {
+        "min": 20.838447609234127,
+        "median": 24.19097042505323,
+        "max": 27.672878405936153
+      },
+      "peak": {
+        "min": 0.0017972087047179374,
+        "median": 0.00772387879720181,
+        "max": 0.01815618602829352
+      }
+    },
+    "sextic_final": {
+      "camera_fps": {
+        "min": 29.761630772578037,
+        "median": 30.000692365982754,
+        "max": 30.184693969792637
+      },
+      "steps_per_second": {
+        "min": 3.99024024743535,
+        "median": 4.17359597677372,
+        "max": 4.486114546856963
+      },
+      "model_seconds_per_wall_second": {
+        "min": 0.0072232780040733515,
+        "median": 0.007555195213194262,
+        "max": 0.008120927693737923
+      },
+      "input_age_ms": {
+        "min": 66.44293099816423,
+        "median": 85.97546600140049,
+        "max": 115.2708800000255
+      },
+      "display_fps": {
+        "min": 12.265909312203192,
+        "median": 12.480720699721058,
+        "max": 12.837284975584199
+      },
+      "event_loop_gap_ms": {
+        "min": 51.92234399873996,
+        "median": 80.64786650174938,
+        "max": 100.43915200003539
+      },
+      "resident_mib": {
+        "min": 291.765625,
+        "median": 326.625,
+        "max": 364.48046875
+      },
+      "peak_resident_mib": {
+        "min": 395.3984375,
+        "median": 399.98828125,
+        "max": 403.30859375
+      },
+      "skipped_wall_seconds": {
+        "min": 31.05214329331203,
+        "median": 34.39759798819294,
+        "max": 38.0074186047065
+      },
+      "peak": {
+        "min": 0.000543854589413972,
+        "median": 0.0021446086184806873,
+        "max": 0.004945693338996838
+      }
+    }
+  },
+  "failure": "",
+  "final_model": "sextic",
+  "camera": {
+    "state": "running",
+    "fps": 30.03721881420862,
+    "mode": {
+      "width": 640,
+      "height": 480,
+      "fourcc": "YUYV",
+      "fps": 30.0,
+      "stride": 1280,
+      "sizeimage": 614400,
+      "colorspace": 8,
+      "quantization": 0,
+      "transfer": 1
+    },
+    "warnings": [
+      "exposure_absolute: requested 156, effective 129"
+    ],
+    "effective_controls": {
+      "brightness": 128,
+      "contrast": 128,
+      "saturation": 128,
+      "gain": 0,
+      "power_line_frequency": 1,
+      "sharpness": 128,
+      "backlight_compensation": 0,
+      "exposure_auto": 1,
+      "exposure_auto_priority": 0,
+      "exposure_absolute": 129,
+      "focus_auto": 0,
+      "focus_absolute": 50,
+      "white_balance_auto": 0,
+      "white_balance_temperature": 4500,
+      "zoom_absolute": 100,
+      "pan_absolute": 0,
+      "tilt_absolute": 0
+    },
+    "frames": 1217,
+    "driver_drops": 0,
+    "drained_discards": 19,
+    "bad_frames": 0,
+    "timestamp_kind": "driver-monotonic",
+    "mailbox_discards": 939
+  },
+  "final_diagnostics": {
+    "n": 1024,
+    "dx": 0.0009775171065493646,
+    "domain_length": 1.0,
+    "model": "soft-sextic-verlet-sponge-v1",
+    "step": 43,
+    "simulation_time": 0.07784016372818323,
+    "dt": 0.0018102363657717037,
+    "cfl": 0.5555615406553359,
+    "curvature_bound": 27712.0,
+    "wave_curvature_number": 1.6,
+    "minimum": -0.004945693338996838,
+    "maximum": 0.0,
+    "peak": 0.004945693338996838,
+    "velocity_peak": 0.1223720786069228,
+    "energy": 0.005544121505446758,
+    "kinetic": 0.004922574783627569,
+    "gradient_energy": 7.783835271328624e-05,
+    "local_potential": 0.0005437083691059035,
+    "potential": 0.0006215467218191897,
+    "reference_energy": 0.0,
+    "input_work": 0.006354860426106338,
+    "damping_loss": 0.0008103600349564837,
+    "parameter_work": 0.0,
+    "balance_residual": -3.7888570309624857e-07,
+    "envelope": 0.4,
+    "envelope_ratio": 4.0,
+    "envelope_fraction": 0.012364233347492093,
+    "envelope_ok": true,
+    "finite": true
+  },
+  "limitations": "No physical scene manipulation or unplugging; age is sampled driver-frame age at simulation publication, not end-to-end optical latency.",
+  "shutdown": {
+    "runtime_stopped": true,
+    "capture_stopped": true
+  }
+}

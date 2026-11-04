@@ -18,6 +18,8 @@ from . import __version__
 from .camera import V4L2Camera
 from .inputs import SYNTHETIC_MODES, luminance_source, synthetic_source
 from .models import MODEL_IDS, create_field, load_field, model_name
+from .grid import DEFAULT_GRID, GRID_SIZES, application_grid
+from .metrics import process_memory
 
 
 class EventLog:
@@ -35,6 +37,7 @@ class EventLog:
                       monotonic=time.monotonic(), **values)
         if field is not None:
             record.update(step=field.step_count, simulation_time=field.time,
+                          grid=field.n, dx=field.dx, domain_length=1.0,
                           model=model_name(field), model_id=MODEL_IDS[model_name(field)],
                           nonlinear=asdict(field.nonlinear) if hasattr(field, "nonlinear") else {})
         with self.lock:
@@ -73,10 +76,11 @@ class LatestFrame:
 
 
 class Acquisition(threading.Thread):
-    def __init__(self, mailbox, log, stop, device=None, exposure=156):
+    def __init__(self, mailbox, log, stop, device=None, exposure=156, grid=DEFAULT_GRID):
         super().__init__(name="sentio-capture", daemon=True)
         self.mailbox, self.log, self.stop_event = mailbox, log, stop
         self.device, self.exposure = device, exposure
+        self.grid = application_grid(grid)
 
     def run(self):
         camera = None
@@ -113,7 +117,7 @@ class Acquisition(threading.Thread):
                 status = dict(state="running", fps=fps, mode=camera.mode, identity=camera.info,
                               warnings=warnings, effective_controls=effective_controls, **camera.stats())
                 # One owned source plus one optional preview; no frame history.
-                self.mailbox.publish((luminance_source(y), y, stamp, sequence), status)
+                self.mailbox.publish((luminance_source(y, self.grid), y, stamp, sequence), status)
         except Exception as exc:
             self.mailbox.update_status(state="error", error=str(exc), fps=0.0)
             self.log.write("camera_error", error=str(exc))
@@ -126,10 +130,10 @@ class Acquisition(threading.Thread):
 class Engine:
     """Simulation state owner. All mutations execute between integration steps."""
 
-    def __init__(self, log, source="stationary", model="linear"):
+    def __init__(self, log, source="stationary", model="linear", grid=DEFAULT_GRID):
         if source not in ("camera", *SYNTHETIC_MODES):
             raise ValueError("invalid input source")
-        self.field, self.log, self.source = create_field(model), log, source
+        self.field, self.log, self.source = create_field(model, application_grid(grid)), log, source
         self.paused = False
         self.coupling_enabled = True
         self.fault = ""
@@ -158,7 +162,7 @@ class Engine:
             elif name == "model":
                 if value == self.model:
                     raise ValueError("Model already active; use Reset field to clear its state")
-                candidate = create_field(value)
+                candidate = create_field(value, self.field.n)
                 self.field = candidate
                 self.paused, self.coupling_enabled, self.fault = True, False, ""
                 self.epoch += 1
@@ -189,8 +193,12 @@ class Engine:
                 self.field.save(value)
             elif name == "load":
                 loaded = load_field(value)
-                if loaded.n != 256 or not loaded.sponge:
-                    raise ValueError("Application checkpoints must use a 256x256 grid with sponge")
+                if not loaded.sponge:
+                    raise ValueError("Application checkpoints require sponge boundaries")
+                if loaded.n != self.field.n:
+                    hint = (f"restart with --grid {loaded.n}" if loaded.n in GRID_SIZES else
+                            f"grid {loaded.n} is not a supported application size; choose {GRID_SIZES}")
+                    raise ValueError(f"Checkpoint must match this {self.field.n}x{self.field.n} session; {hint}")
                 self.field = loaded
                 self.paused, self.coupling_enabled, self.fault = True, False, ""
                 self.epoch += 1
@@ -222,13 +230,13 @@ class Engine:
 
 
 class Runtime(threading.Thread):
-    def __init__(self, source="stationary", device=None, exposure=156, log_path=None, model="linear"):
+    def __init__(self, source="stationary", device=None, exposure=156, log_path=None, model="linear", grid=DEFAULT_GRID):
         super().__init__(name="sentio-simulation", daemon=True)
         self.log = EventLog(log_path)
-        self.engine = Engine(self.log, source, model)
+        self.engine = Engine(self.log, source, model, grid)
         self.stop_event = threading.Event()
         self.mailbox = LatestFrame()
-        self.capture = Acquisition(self.mailbox, self.log, self.stop_event, device, exposure) if source == "camera" else None
+        self.capture = Acquisition(self.mailbox, self.log, self.stop_event, device, exposure, grid) if source == "camera" else None
         self.commands = queue.Queue(maxsize=128)
         self.lock = threading.Lock()
         self.command_sequence = 0
@@ -262,6 +270,7 @@ class Runtime(threading.Thread):
         input_frames = 0
         history = deque(maxlen=600)
         last_epoch = engine.epoch
+        memory = process_memory()
         try:
             while not self.stop_event.is_set():
                 now = time.monotonic()
@@ -288,7 +297,7 @@ class Runtime(threading.Thread):
                         preview = None
                 else:
                     if now >= next_input:
-                        source = synthetic_source(256, now - start, engine.source)
+                        source = synthetic_source(engine.field.n, now - start, engine.source)
                         stamp = now
                         input_frames += 1
                         next_input = now + 1 / 30
@@ -313,15 +322,17 @@ class Runtime(threading.Thread):
                 if now >= next_publish:
                     diagnostics = engine.field.diagnostics()
                     if now >= next_log:
+                        memory = process_memory()
                         history.append((engine.field.time, diagnostics["energy"]))
                         self.log.write("diagnostics", engine.field, diagnostics=diagnostics,
                                        steps_per_second=sps, simulation_seconds_per_second=sim_speed,
                                        skipped_wall_seconds=skipped_wall, capture=capture,
                                        input_fresh=fresh, input_enabled=engine.coupling_enabled,
-                                       input_age=max(0, now-stamp),
+                                       input_age=max(0, now-stamp), memory=memory,
                                        paused=engine.paused, epoch=engine.epoch)
                         next_log = now + 1
                     snap = dict(u=engine.field.u.copy(), diagnostics=diagnostics,
+                                grid=engine.field.n, memory=memory,
                                 model=engine.model,
                                 nonlinear=asdict(engine.field.nonlinear) if engine.model == "sextic" else {},
                                 parameters=asdict(engine.field.parameters), paused=engine.paused,

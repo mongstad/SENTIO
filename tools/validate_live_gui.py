@@ -19,11 +19,13 @@ from PySide6.QtWidgets import QApplication
 
 from sentio.gui import Window
 from sentio.runtime import Runtime
+from sentio.grid import DEFAULT_GRID, GRID_SIZES
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", choices=("camera", "stationary"), default="camera")
+    parser.add_argument("--grid", type=int, choices=GRID_SIZES, default=DEFAULT_GRID)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--screenshot", type=Path)
     parser.add_argument("--leave-open", action="store_true")
@@ -34,7 +36,7 @@ def main():
     app = QApplication([])
     if app.platformName() in ("offscreen", "minimal"):
         parser.error("this protocol requires a visible desktop Qt platform")
-    runtime = Runtime(source=args.source, model="sextic")
+    runtime = Runtime(source=args.source, model="sextic", grid=args.grid)
     window = Window(runtime)
     measurements, controls, checks = {}, [], []
     failure = ""
@@ -73,6 +75,7 @@ def main():
 
     def observe(seconds, phase=None):
         start, samples = time.monotonic(), []
+        previous_poll = start
         while time.monotonic()-start < seconds:
             app.processEvents()
             snap = runtime.latest()
@@ -87,7 +90,12 @@ def main():
                                     model_seconds_per_wall_second=snap["sim_speed"],
                                     input_age_ms=1000*snap["input_age"],
                                     display_fps=(len(times)-1)/max(times[-1]-times[0], 1e-6),
+                                    event_loop_gap_ms=1000*(time.monotonic()-previous_poll),
+                                    resident_mib=snap["memory"]["resident_mib"],
+                                    peak_resident_mib=snap["memory"]["peak_resident_mib"],
+                                    skipped_wall_seconds=snap["skipped_wall_seconds"],
                                     peak=snap["diagnostics"]["peak"]))
+            previous_poll = time.monotonic()
             time.sleep(.01)
         if phase:
             measurements[phase] = {key: dict(min=float(np.min(values)), median=float(np.median(values)),
@@ -150,7 +158,7 @@ def main():
     except Exception as exc:
         failure = f"{type(exc).__name__}: {exc}"
     snap = runtime.latest()
-    report = dict(utc=datetime.now(timezone.utc).isoformat(), source=args.source,
+    report = dict(utc=datetime.now(timezone.utc).isoformat(), source=args.source, grid=args.grid,
                   qt_platform=app.platformName(), visible=window.isVisible(),
                   python=platform.python_version(), numpy=np.__version__,
                   source_sha256={str(p): hashlib.sha256(p.read_bytes()).hexdigest()

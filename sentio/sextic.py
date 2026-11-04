@@ -11,6 +11,7 @@ import zipfile
 import numpy as np
 
 from .field import Field, Parameters
+from .grid import DEFAULT_GRID, MAX_GRID, MAX_CHECKPOINT_BYTES
 
 
 MODEL = "soft-sextic-verlet-sponge-v1"
@@ -68,7 +69,7 @@ class SexticField(Field):
     does not switch models or decide when an application should pause.
     """
 
-    def __init__(self, n=256, parameters=None, nonlinear=None, sponge=True):
+    def __init__(self, n=DEFAULT_GRID, parameters=None, nonlinear=None, sponge=True):
         super().__init__(n, parameters, sponge)
         self.nonlinear = nonlinear or SexticParameters()
         self._step_bound(self.parameters, self.nonlinear)
@@ -186,7 +187,8 @@ class SexticField(Field):
         kinetic, gradient, local = self._energy(self.parameters, self.nonlinear)
         energy = kinetic+gradient+local
         peak = float(np.max(np.abs(self.u)))
-        return dict(model=MODEL, step=self.step_count, simulation_time=self.time, dt=self.dt,
+        return dict(n=self.n, dx=self.dx, domain_length=1.0,
+                    model=MODEL, step=self.step_count, simulation_time=self.time, dt=self.dt,
                     cfl=self.parameters.speed*self.dt/self.dx,
                     curvature_bound=self.nonlinear.curvature_bound,
                     wave_curvature_number=self.dt*math.hypot(math.sqrt(8)*self.parameters.speed/self.dx,
@@ -249,7 +251,7 @@ class SexticField(Field):
         # Validate sizes and headers before NumPy allocation, as for schema 1.
         # Application dispatch lives separately in models.py.
         with zipfile.ZipFile(path) as archive:
-            if len(archive.infolist()) != 3 or sum(i.file_size for i in archive.infolist()) > 2_000_000:
+            if len(archive.infolist()) != 3 or sum(i.file_size for i in archive.infolist()) > MAX_CHECKPOINT_BYTES:
                 raise ValueError("invalid or oversized nonlinear checkpoint")
             if set(archive.namelist()) != {"u.npy", "v.npy", "metadata.npy"}:
                 raise ValueError("invalid nonlinear checkpoint members")
@@ -259,7 +261,7 @@ class SexticField(Field):
                         raise ValueError("unsupported checkpoint array format")
                     shape, _, dtype = np.lib.format.read_array_header_1_0(member)
                     valid = (shape == () and dtype.kind == "U" and dtype.itemsize <= 10000) if name == "metadata.npy" else (
-                        len(shape) == 2 and shape[0] == shape[1] and 17 <= shape[0] <= 256 and dtype == np.float64)
+                        len(shape) == 2 and shape[0] == shape[1] and 17 <= shape[0] <= MAX_GRID and dtype == np.float64)
                     if not valid:
                         raise ValueError("invalid nonlinear checkpoint array header")
         with np.load(path, allow_pickle=False) as data:
