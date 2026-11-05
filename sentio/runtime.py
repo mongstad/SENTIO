@@ -4,6 +4,7 @@ from collections import deque
 from dataclasses import asdict
 from datetime import datetime, timezone
 import json
+import math
 from pathlib import Path
 import platform
 import queue
@@ -138,10 +139,13 @@ class Engine:
         self.coupling_enabled = True
         self.fault = ""
         self.message = ""
-        self.display_range = .05 if model == "sextic" else (2.0 if source == "camera" else 0.2)
+        self.display_range = 2.0
         self.intensity = 1.0
         self.preview_enabled = False
         self.command_revision = 0
+        # Latest numeric result per key: bounded, and cannot be hidden by a
+        # subsequent unrelated command before Qt polls the next snapshot.
+        self.control_results = {}
         self.epoch = 0
         self.log.write("session_start", self.field, version=__version__, source=source,
                        parameters=asdict(self.field.parameters), n=self.field.n,
@@ -156,6 +160,7 @@ class Engine:
 
     def command(self, name, value=None, revision=None):
         self.command_revision = self.command_revision + 1 if revision is None else revision
+        accepted = False
         try:
             if name == "parameters":
                 self.field.configure(**value)
@@ -185,9 +190,11 @@ class Engine:
                 self.fault = ""
                 self.epoch += 1
             elif name in ("display_range", "intensity"):
-                low, high = ((.0001, 10000) if name == "display_range" else (.01, 100))
-                if not np.isfinite(value) or not low <= value <= high:
-                    raise ValueError(f"{name} must be in [{low}, {high}]")
+                if not math.isfinite(value) or value <= 0:
+                    raise ValueError(f"{name} must be finite and strictly positive")
+                limit = (value / self.intensity if name == "display_range" else self.display_range / value)
+                if not math.isfinite(limit) or limit <= 0:
+                    raise ValueError("display range / intensity must be a positive finite float64 clipping threshold")
                 setattr(self, name, float(value))
             elif name == "save":
                 self.field.save(value)
@@ -214,17 +221,24 @@ class Engine:
             self.log.write("control", self.field, name=name, value=value, epoch=self.epoch,
                            parameters=asdict(self.field.parameters), paused=self.paused,
                            coupling_enabled=self.coupling_enabled)
+            accepted = True
         except (ValueError, OSError, KeyError, TypeError, EOFError, OverflowError,
                 FloatingPointError, zipfile.BadZipFile) as exc:
             self.message = f"Rejected {name}: {exc}"
             self.log.write("control_rejected", self.field, name=name, error=str(exc))
+        keys = value.keys() if name == "parameters" and isinstance(value, dict) else (name,)
+        for key in keys:
+            if key in ("speed", "damping", "coupling", "omega", "amplitude", "display_range", "intensity"):
+                self.control_results[key] = dict(revision=self.command_revision, accepted=accepted,
+                                                 message=self.message,
+                                                 value=(value[key] if name == "parameters" else value) if accepted else None)
 
     def step(self, source=None):
         if self.paused:
             return
         try:
             self.field.step(source if self.coupling_enabled else None)
-        except (FloatingPointError, ValueError) as exc:
+        except (FloatingPointError, ValueError, OverflowError) as exc:
             self.paused, self.fault = True, str(exc)
             self.log.write("numerical_fault", self.field, error=self.fault)
 
@@ -345,6 +359,7 @@ class Runtime(threading.Thread):
                                 preview_enabled=engine.preview_enabled,
                                 epoch=engine.epoch,
                                 command_revision=engine.command_revision,
+                                control_results=engine.control_results.copy(),
                                 wall_seconds=now-start)
                     with self.lock:
                         self.snapshot = snap

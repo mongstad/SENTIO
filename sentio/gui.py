@@ -1,13 +1,15 @@
 """Qt display of signed simulation values, with a separate optional Y preview."""
 
 from collections import deque
+from decimal import Decimal, InvalidOperation
+import math
 import queue
 import time
 
 import numpy as np
 from PySide6.QtCore import QPointF, Qt, QTimer
 from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog,
+from PySide6.QtWidgets import (QCheckBox, QComboBox, QLineEdit, QFileDialog,
                                QFormLayout, QHBoxLayout, QLabel, QMainWindow,
                                QMessageBox, QPushButton, QScrollArea, QVBoxLayout, QWidget)
 
@@ -17,7 +19,10 @@ from .models import MODEL_LABELS
 
 def signed_rgb(u, display_range, intensity):
     """Fixed symmetric range: negative blue, zero dark gray, positive orange."""
-    scaled = np.clip(u * intensity / display_range, -1, 1)
+    # Clip before division: finite extreme controls cannot overflow u*intensity
+    # or u/limit, nor erase a representable result through an intermediate zero.
+    limit = display_range / intensity
+    scaled = np.clip(u, -limit, limit) / limit
     positive = np.array([255, 127, 51]) - 24
     negative = np.array([65, 155, 255]) - 24
     # Preserve every cell and the exact color arithmetic, but avoid several
@@ -58,16 +63,83 @@ class EnergyPlot(QWidget):
             p.drawLine(a, b)
 
 
+class NumericEdit(QLineEdit):
+    """An explicit draft, independent of focus and asynchronous effective state."""
+
+    def __init__(self, value):
+        super().__init__(repr(float(value)))
+        self.setMaxLength(128)
+        self.effective = value
+        self.generation = 0
+        self.dirty = False
+        self.pending = None
+        self.feedback = QLabel("Enter to apply · Escape to discard draft")
+        self.feedback.setWordWrap(True)
+        self.feedback.setStyleSheet("font-size: 11px; color: #a8bad1;")
+        self.textEdited.connect(self.edited)
+
+    def edited(self):
+        self.generation += 1
+        self.dirty = True
+        self.feedback.setText(f"Draft · Enter to apply · effective {self.effective!r}")
+
+    def parsed(self):
+        try:
+            decimal = Decimal(self.text().strip())
+            value = float(decimal)
+        except (InvalidOperation, ValueError, OverflowError) as exc:
+            raise ValueError("enter a complete decimal number (scientific notation is allowed)") from exc
+        if not math.isfinite(value):
+            raise ValueError("enter a finite float64 number")
+        if value == 0 and decimal != 0:
+            raise ValueError("number underflows float64; enter a representable value")
+        return value
+
+    def synchronize(self, value, result=None):
+        previous = self.effective
+        self.effective = value
+        acknowledged = False
+        if self.pending and result and result["revision"] >= self.pending[0]:
+            acknowledged = True
+            _, submitted_generation = self.pending
+            self.pending = None
+            applied = result.get("value", value)
+            if submitted_generation == self.generation:
+                self.dirty = not result["accepted"]
+                if result["accepted"]:
+                    self.feedback.setText(f"Applied {applied!r}" +
+                                          (f" · now effective {value!r}" if applied != value else ""))
+                else:
+                    self.feedback.setText(f"{result['message']} · effective {value!r}")
+            else:
+                outcome = f"Applied earlier {applied!r}" if result["accepted"] else result["message"]
+                self.feedback.setText(f"{outcome} · effective {value!r} · draft retained; Enter to apply")
+        if previous != value and not acknowledged and self.pending is None:
+            self.feedback.setText(f"Effective {value!r}" + (" · draft retained; Enter to apply" if self.dirty else ""))
+        if not self.dirty and self.pending is None:
+            text = repr(float(value))
+            if self.text() != text:
+                self.setText(text)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Escape:
+            self.generation += 1
+            self.dirty = False
+            self.setText(repr(float(self.effective)))
+            self.feedback.setText(f"Draft discarded · effective {self.effective!r}")
+            return
+        super().keyPressEvent(event)
+
+
 class Window(QMainWindow):
     def __init__(self, runtime):
         super().__init__()
         self.runtime = runtime
         self.pending = {}
-        self.shown_epoch = None
         self.setWindowTitle("SENTIO · Artificial Sensory Field · Prototype 1")
         self.resize(1180, 850)
         self.setStyleSheet("QWidget { background: #10161f; color: #d9e3f0; font-size: 13px; } "
-                           "QPushButton, QDoubleSpinBox, QComboBox { background: #253246; padding: 5px; } "
+                           "QPushButton, QLineEdit, QComboBox { background: #253246; padding: 5px; } "
                            "QLabel { background: transparent; }")
         root = QWidget()
         self.setCentralWidget(root)
@@ -116,33 +188,38 @@ class Window(QMainWindow):
             right.addWidget(self.source_combo)
         form = QFormLayout()
         self.controls = {}
-        for key, label, low, high, step, value in (
-            ("speed", "Wave speed (domain units / s)", .01, 2, .05, .3),
-            ("damping", "Damping (1 / s)", 0, 10, .1, .4),
-            ("coupling", "Input acceleration gain", 0, 20, .1, 2),
-            ("omega", "Sextic ω (1 / model s)", .0001, 1000000, 1, 8),
-            ("amplitude", "Sextic amplitude scale A", .0001, 10000, .01, .1),
-            ("display_range", "Display range (± field units)", .0001, 10000, .05, runtime.engine.display_range),
-            ("intensity", "Display intensity", .01, 100, .1, 1),
+        physical = runtime.engine.field.parameters
+        nonlinear = getattr(runtime.engine.field, "nonlinear", None)
+        for key, label, value in (
+            ("speed", "Wave speed (domain units / s)", physical.speed),
+            ("damping", "Damping (1 / s)", physical.damping),
+            ("coupling", "Input acceleration gain", physical.coupling),
+            ("omega", "Sextic ω (1 / model s)", nonlinear.omega if nonlinear else 8),
+            ("amplitude", "Sextic amplitude scale A", nonlinear.amplitude if nonlinear else .1),
+            ("display_range", "Display range (± field units)", runtime.engine.display_range),
+            ("intensity", "Display intensity", runtime.engine.intensity),
         ):
-            spin = QDoubleSpinBox()
-            spin.setDecimals(4)
-            spin.setRange(low, high)
-            spin.setSingleStep(step)
-            spin.setValue(value)
-            spin.setKeyboardTracking(False)
-            spin.valueChanged.connect(lambda v, k=key: self.send("parameters", {k:v}) if k in ("speed", "damping", "coupling", "omega", "amplitude") else self.send(k, v))
+            if key in ("speed", "display_range"):
+                form.addRow(QLabel("Physical simulation" if key == "speed" else "Display only (no field changes)"))
+            edit = NumericEdit(value)
+            edit.returnPressed.connect(lambda k=key: self.commit_numeric(k))
+            domain = "nonnegative" if key in ("damping", "coupling") else "strictly positive"
+            edit.setToolTip(f"Finite, {domain}. Type a decimal or scientific notation, then Enter. "
+                            "Numerically unrepresentable or infeasible settings are rejected; no silent clamping.")
             if key in ("omega", "amplitude"):
-                spin.setEnabled(runtime.engine.model == "sextic")
-                spin.setToolTip("Type and press Enter to apply. The solver rejects unsafe combinations; widget limits are not a validated parameter region.")
-            self.controls[key] = spin
-            form.addRow(label, spin)
+                edit.setEnabled(runtime.engine.model == "sextic")
+            self.controls[key] = edit
+            cell = QVBoxLayout()
+            cell.addWidget(edit)
+            cell.addWidget(edit.feedback)
+            form.addRow(label, cell)
         right.addLayout(form)
         self.coupling = QCheckBox("Enable input coupling")
-        self.coupling.setChecked(True)
+        self.coupling.setChecked(runtime.engine.coupling_enabled)
         self.coupling.toggled.connect(lambda v: self.send("coupling_enabled", v))
         right.addWidget(self.coupling)
         self.pause = QCheckBox("Pause field (acquisition continues)")
+        self.pause.setChecked(runtime.engine.paused)
         self.pause.toggled.connect(lambda v: self.send("paused", v))
         right.addWidget(self.pause)
         buttons = QHBoxLayout()
@@ -185,8 +262,25 @@ class Window(QMainWindow):
             revision = self.runtime.submit(name, value)
             for key in (value.keys() if name == "parameters" else (name,)):
                 self.pending[key] = revision
+            return revision
         except queue.Full:
             self.notice.setText("Control queue full; retry when the simulation responds.")
+
+    def commit_numeric(self, key):
+        edit = self.controls[key]
+        try:
+            value = edit.parsed()
+        except ValueError as exc:
+            edit.dirty = True
+            edit.feedback.setText(f"Rejected: {exc} · effective {edit.effective!r}")
+            return
+        revision = (self.send("parameters", {key: value}) if key in
+                    ("speed", "damping", "coupling", "omega", "amplitude") else self.send(key, value))
+        if revision is not None:
+            edit.pending = (revision, edit.generation)
+            edit.feedback.setText(f"Applying {value!r}… · effective {edit.effective!r}")
+        else:
+            edit.feedback.setText("Queue full; draft retained. Press Enter to retry.")
 
     def save(self):
         path, _ = QFileDialog.getSaveFileName(self, "Save simulation state (no camera data)", "field-state.npz", "NumPy checkpoint (*.npz)")
@@ -218,7 +312,6 @@ class Window(QMainWindow):
         self.render_times.append(now)
         render_fps = (len(self.render_times)-1) / max(now-self.render_times[0], 1e-6)
         d, c = snap["diagnostics"], snap["capture"]
-        epoch_changed = snap["epoch"] != self.shown_epoch
         self.pending = {key:revision for key,revision in self.pending.items()
                         if revision > snap["command_revision"]}
         image = pixmap(signed_rgb(snap["u"], snap["display_range"], snap["intensity"]))
@@ -239,9 +332,8 @@ class Window(QMainWindow):
                 widget.setEnabled(snap["model"] == "sextic")
                 if snap["model"] != "sextic":
                     continue
-            if (epoch_changed or not widget.hasFocus()) and key not in self.pending:
-                self.sync(widget, snap["parameters"].get(key, snap["nonlinear"].get(key, snap.get(key))))
-        self.shown_epoch = snap["epoch"]
+            widget.synchronize(snap["parameters"].get(key, snap["nonlinear"].get(key, snap.get(key))),
+                               snap["control_results"].get(key))
         for key, widget in (("paused", self.pause), ("coupling_enabled", self.coupling),
                             ("preview_enabled", self.preview_toggle)):
             if key not in self.pending:
@@ -272,7 +364,7 @@ class Window(QMainWindow):
             f"Peak |u| {d['peak']:.5g} · peak |v| {d['velocity_peak']:.5g}\n"
             f"Field energy {d['energy']:.6g} (not conserved with forcing / damping)\n"
             + nonlinear +
-            f"dt {d['dt']:.6f} s · CFL {d['cfl']:.3f} ≤ 0.566\n"
+            f"dt {d['dt']:.6g} s · CFL {d['cfl']:.3f} ≤ 0.566\n"
             f"Simulation {snap['steps_per_second']:.1f} steps/s · {snap['sim_speed']:.4g} sim s/wall s\n"
             f"Acquisition {c.get('fps', 0):.2f} FPS · display {render_fps:.1f} FPS\n"
             f"Driver drops {c.get('driver_drops', 0)} · bad frames {c.get('bad_frames', 0)}\n"
@@ -281,6 +373,8 @@ class Window(QMainWindow):
             f"{'coupled' if snap['coupling_enabled'] else 'coupling off'} · age {1000*snap['input_age']:.1f} ms\n"
             f"Wall time skipped under load {snap['skipped_wall_seconds']:.3f} s")
         warnings = list(c.get("warnings", []))
+        if not snap["paused"] and snap["wall_seconds"] > 3 and snap["sim_speed"] < .9:
+            warnings.append("Simulation slower than wall time; use measured model time for comparisons.")
         if snap["source"] == "camera":
             if "mode" in c:
                 mode = c["mode"]

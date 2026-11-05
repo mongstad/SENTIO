@@ -34,7 +34,7 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(engine.field.time, 0)
             self.assertEqual(engine.field.parameters.damping, .4)
             self.assertFalse(np.any(engine.field.u))
-            self.assertEqual(engine.display_range, .2)
+            self.assertEqual(engine.display_range, 2)
             engine.command("paused", False)
             engine.command("coupling_enabled", True)
             engine.step(source)

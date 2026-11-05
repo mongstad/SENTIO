@@ -52,7 +52,7 @@ def main():
             time.sleep(.01)
         raise AssertionError("GUI acknowledgement/state timed out")
 
-    def command(name, value=None, widget_action=None):
+    def command(name, value=None, widget_action=None, accepted=True):
         start = time.monotonic()
         prior = runtime.command_sequence
         (widget_action or (lambda: window.send(name, value)))()
@@ -61,17 +61,18 @@ def main():
         snap = runtime.latest()
         controls.append(dict(name=name, value=value, acknowledgement_seconds=time.monotonic()-start,
                              message=snap["message"], model=snap["model"]))
-        if snap["message"].startswith("Rejected"):
+        if snap["message"].startswith("Rejected") == accepted:
             raise AssertionError(snap["message"])
 
-    def typed(key, value):
+    def typed(key, value, accepted=True):
         def action():
             widget = window.controls[key]
             widget.setFocus()
             widget.selectAll()
             QTest.keyClicks(widget, str(value))
             QTest.keyClick(widget, Qt.Key.Key_Return)
-        command("parameters", {key: value}, action)
+        physical = key in ("speed", "damping", "coupling", "omega", "amplitude")
+        command("parameters" if physical else key, {key: value} if physical else value, action, accepted)
 
     def observe(seconds, phase=None):
         start, samples = time.monotonic(), []
@@ -105,6 +106,12 @@ def main():
     runtime.start()
     window.show()
     try:
+        assert runtime.engine.display_range == 2 and runtime.engine.intensity == 1
+        assert runtime.engine.field.parameters.speed == .3
+        assert runtime.engine.field.parameters.damping == .4
+        assert runtime.engine.field.parameters.coupling == 2
+        assert not runtime.engine.paused and runtime.engine.coupling_enabled
+        checks.append("fresh launch recommended defaults before first GUI event")
         wait_for(lambda: runtime.latest() is not None and runtime.latest()["diagnostics"]["step"] > 10)
         if args.source == "camera":
             wait_for(lambda: runtime.latest()["capture"]["state"] == "running")
@@ -139,7 +146,40 @@ def main():
         command("model", "linear", lambda: window.model_combo.activated.emit(index))
         assert runtime.latest()["paused"] and not runtime.latest()["coupling_enabled"]
         assert not np.any(runtime.latest()["u"])
-        wait_for(lambda: window.controls["coupling"].value() == 2)
+        wait_for(lambda: float(window.controls["coupling"].text()) == 2)
+        for key, values in (("speed", (.001, 3)), ("damping", (11,)), ("coupling", (21,)),
+                            ("display_range", (1e-6, 1e5)), ("intensity", (1e-4, 1e3))):
+            for value in values:
+                typed(key, value)
+        before = runtime.latest()["u"].copy()
+        for key, value in (("speed", 1e100), ("speed", 0), ("damping", -1),
+                           ("coupling", -1), ("display_range", 0), ("intensity", -1)):
+            typed(key, value, accepted=False)
+        np.testing.assert_array_equal(runtime.latest()["u"], before)
+        checks.append("typed values beyond old physical/display bounds; unsafe edits rejected atomically")
+        edit = window.controls["speed"]
+        edit.setFocus()
+        edit.selectAll()
+        QTest.keyClicks(edit, "4e")
+        prior = runtime.command_sequence
+        window.controls["intensity"].setFocus()
+        observe(.2)
+        assert edit.text() == "4e" and runtime.command_sequence == prior
+        QTest.keyClick(edit, Qt.Key.Key_Return)
+        assert "Rejected" in edit.feedback.text()
+        assert runtime.command_sequence == prior
+        QTest.keyClick(edit, Qt.Key.Key_Escape)
+        assert float(edit.text()) == 3
+        checks.append("partial draft survives focus/polling, rejects on Enter, Escape restores effective value")
+        command("coupling_enabled", True)
+        command("paused", False)
+        observe(5, "linear_beyond_old_bounds")
+        typed("speed", 100)
+        observe(5, "linear_slow_cfl")
+        typed("speed", .3)
+        typed("damping", .4)
+        typed("coupling", 2)
+        command("reset")
         command("display_range", .05)
         command("intensity", 1)
         command("coupling_enabled", True)

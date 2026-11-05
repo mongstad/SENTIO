@@ -14,6 +14,12 @@ The experiment asks whether interference and continuing field evolution produce 
 
 **Issue #8 adds launch-selectable 256², 512² and 1024² fields** on the same unit-square domain. The default remains 256². Larger grids can advance much slower than wall time on the CPU; camera resolution remains 640×480. See [grid measurements and limitations](docs/ISSUE_8_GRIDS.md).
 
+**Issue #4 replaces numeric spinners with explicit keyboard drafts.** Select a value,
+type a decimal or scientific notation, and press Enter/Return to apply. Per-control
+feedback reports acceptance or rejection and the effective value. Drafts survive
+focus changes, refreshes and delayed replies; Escape discards a draft. See the
+[valid domains, safety policy and validation](docs/ISSUE_4_CONTROLS.md).
+
 ### Run on Fedora 44
 
 From this checkout, install the open-source CPU/Qt dependencies and first run the synthetic control:
@@ -58,9 +64,9 @@ python -m pip install --no-deps -e .
 sentio --source camera
 ```
 
-The field uses blue for negative values, dark gray for zero, and orange for positive values. **Display range** and **Display intensity** change only the color mapping; the legend shows the effective clipping threshold and clipped fraction. Linear defaults to ±2 for camera input and ±0.2 for synthetic input; sextic starts at a fixed ±0.05. Use **Enable input coupling** for a no-input control without clearing the field. **Pause** freezes integration while acquisition continues; **Reset** zeros amplitude, velocity, simulation time, and step, retaining settings. The optional camera preview is separately labeled and disabled initially.
+The field uses blue for negative values, dark gray for zero, and orange for positive values. **Display range** and **Display intensity** change only the color mapping; the legend shows the effective clipping threshold and clipped fraction. Every fresh launch, with either source or model, starts at wave speed **0.3**, damping **0.4**, input gain **2.0**, display range **±2.0**, intensity **1.0**, coupling **enabled**, and simulation **running**. These values are applied before evolution; prior sessions never supply implicit settings. Smaller synthetic/sextic signals may need an explicitly chosen display scale. Use **Enable input coupling** for a no-input control without clearing the field. **Pause** freezes integration while acquisition continues; **Reset** zeros amplitude, velocity, simulation time, and step, retaining settings. The optional camera preview is separately labeled and disabled initially.
 
-Changing the model resets the field and model parameters, pauses, and disables input coupling; explicitly enable coupling and uncheck Pause to continue. The display scale is retained for comparisons. Type ω/A and press Enter to apply; rejected settings leave the solver unchanged. The experimental validity envelope `|u|≤4A` is separate from display saturation. The **explicit Gaussian seed** button is a control experiment with γ=κ=0, paused and uncoupled; it is not camera-generated structure.
+Changing the model resets the field and model parameters, pauses, and disables input coupling; explicitly enable coupling and uncheck Pause to continue. The display scale is retained for comparisons. All numeric controls, including ω/A, require Enter; focus loss never applies a draft. Rejected settings leave the solver unchanged, and the draft remains available for correction. The experimental validity envelope `|u|≤4A` is separate from display saturation. The **explicit Gaussian seed** button is a control experiment with γ=κ=0, paused and uncoupled; it is not camera-generated structure.
 
 Use **Save state** explicitly to save amplitude, velocity, model settings, and simulation clock. **Restore** validates the checkpoint and opens it paused with coupling off; enable coupling and resume when ready. No frame history is saved, and restoring cannot reproduce unrecorded camera stimuli. Normal window close stops acquisition and attempts to restore changed camera controls.
 

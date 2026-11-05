@@ -131,7 +131,7 @@ class FieldTests(unittest.TestCase):
         f.configure(speed=2, damping=10, coupling=20)
         np.testing.assert_array_equal(f.u, old)
         self.assertLess(f.dt, 1/240)
-        for kwargs in ({"speed":0}, {"speed":float("nan")}, {"damping":-1}, {"coupling":21}):
+        for kwargs in ({"speed":0}, {"speed":float("nan")}, {"damping":-1}, {"coupling":-1}):
             with self.assertRaises(ValueError):
                 f.configure(**kwargs)
             self.assertEqual(f.parameters.speed, 2)

@@ -1,0 +1,70 @@
+{
+  "baseline_commit": "4bf7a98",
+  "checks": [
+    {
+      "name": "baseline",
+      "command": "python3 -m unittest discover -s tests -v",
+      "passed": 64,
+      "wall_seconds": 7.714,
+      "skipped": 0,
+      "failed": 0,
+      "log": "runs/issue4/baseline-tests.log",
+      "log_sha256": "655b2b851c36455f536607982078efe66e5db8531f8ca07e797e2f404928dd37"
+    },
+    {
+      "name": "final",
+      "command": "python3 -m unittest discover -s tests -v",
+      "passed": 75,
+      "wall_seconds": 8.673,
+      "skipped": 0,
+      "failed": 0,
+      "log": "runs/issue4/final-tests.log",
+      "log_sha256": "e6bd141b936b506af6a8f17048df6216c1a64dc07489b01b11d8f2114830945a"
+    },
+    {
+      "name": "system",
+      "command": "PYTHONNOUSERSITE=1 python3 -m unittest discover -s tests -v",
+      "passed": 75,
+      "wall_seconds": 8.505,
+      "skipped": 0,
+      "failed": 0,
+      "log": "runs/issue4/system-tests.log",
+      "log_sha256": "fe381bdb3948f6ca21d1798b5d0e484e0a4b2a7194d0dde0be55d6051e72e06e"
+    }
+  ],
+  "versions": {
+    "python": "3.14.10",
+    "numpy": "2.4.3",
+    "pyside6": "6.11.2",
+    "system_numpy": "2.4.6"
+  },
+  "static_checks": [
+    "python3 -m compileall -q sentio tests tools: passed",
+    "git diff --check: passed"
+  ],
+  "source_sha256": {
+    "sentio/__init__.py": "5d402c952b53de6637a0c8de5a8a15f445a3129c38b9fb86799b051220a6e50a",
+    "sentio/camera.py": "5b071401b9f3a9c6d9c386016f22f2717280b3f5e44f96fa8a152f043bbbb4af",
+    "sentio/__main__.py": "673dc0f622dee9fbdc91889f9113b653079c6e03d1c9442226fb534913adee52",
+    "sentio/field.py": "a324753316f6bbdfd23ea085ba8f865d32879d24cb271264f1e5c3c540993496",
+    "sentio/grid.py": "a751d2cb05eaee22e22cc69ad27e12e9a9a7e8e7cb4a2354d05b3b4895cca62d",
+    "sentio/gui.py": "e595d6e2dc327223701a7a26f0d2d042eb3d4f626e169fae848986ec9db4323e",
+    "sentio/inputs.py": "7d3acaec25dbd92162a594ee9e6edb4c9fcc4e3be0c35c3d62f5f58754c1ea7b",
+    "sentio/metrics.py": "733804facfb6c778ff7742c62bd5368b26700a318ec18209a77ddbc45536fb6a",
+    "sentio/models.py": "1c46b73e73564c9bffd4412d86a5c577583503e997dc155f1a967344ae5f09ec",
+    "sentio/runtime.py": "53f7bd4e54ebb45fc6862985866e1349000b13a9d9bd06559cc8516bc0efbb6a",
+    "sentio/sextic.py": "2e6cd650b34d2731e1d6150f181b0575dd12ba7d95f5118910c59fc8c6739f02",
+    "tests/test_camera.py": "af51103b080a2523271f4c2be9896e53a2018183481fcc67079651b1b05eb808",
+    "tests/test_field.py": "1638c9184fcda359291fbeff9bfe51fa25ae8058852c262544bba8e135fe2b1d",
+    "tests/test_issue3_research.py": "897036b6bc947181ddbde74f8682d38158b2e3eec55bfb6d5c9af71ec72e34e7",
+    "tests/test_runtime.py": "6f2dd9b92991844d1b3bc641d911fb723fd0adb93fed41b63204a767a83a78af",
+    "tests/test_sextic.py": "333c8c6a992f51f9d77754a9fbdea46502716a60c788df10f2533a60736a9bf4",
+    "tests/test_grids.py": "89f808ddd06755052b7dfae9829ee99c860c496ffbb972093439f10eaf591cd4",
+    "tests/test_gui.py": "84a28ef94a42d8e7db24a13c2d12def073c101bce4906e06544ba83981a94d70",
+    "tests/test_controls.py": "133ebfc2787d53ef26aee1b37e7e3b87dc594cbcb4016cbfc81febecc280644b",
+    "tools/validate_controls.py": "c95ffb42c4aaad959728471803ca9ceb5f50cf0d9b6c47de92735960e8197625",
+    "tools/validate_live_gui.py": "5ca4b3b06dff1adbbdeb13fb7804f08c2659dd12f465f949cbf31a425b6273a5"
+  },
+  "limitations": "Automated Qt events, not physical typing. No new long-duration or live 512/1024 campaign; see live report for actual C922 coverage.",
+  "post_test_changes": "Removed one trailing blank line in tests/test_controls.py after staged whitespace check; no executable changes."
+}

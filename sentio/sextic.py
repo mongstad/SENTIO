@@ -10,15 +10,12 @@ import zipfile
 
 import numpy as np
 
-from .field import Field, Parameters
+from .field import Field, Parameters, MIN_STEP
 from .grid import DEFAULT_GRID, MAX_GRID, MAX_CHECKPOINT_BYTES
 
 
 MODEL = "soft-sextic-verlet-sponge-v1"
 ENVELOPE_RATIO = 4.0
-# Operational ceiling, not a real-time promise: at most 10^6 steps/model s.
-# Broader numeric-control policy remains separately scoped in issue #4.
-MIN_STEP = 1e-6
 MAX_STEP = 1/480
 
 
@@ -161,8 +158,8 @@ class SexticField(Field):
             self._loss_weight = 1-self._decay**2
             self._decay_key = key
         decay = self._decay
-        force = 0.0 if source is None else p.coupling*source
         with np.errstate(over="raise", invalid="raise", divide="raise"):
+            force = 0.0 if source is None else p.coupling*source
             acceleration = p.speed**2*self.laplacian(self.u)+force-potential.gradient(self.u)
             half = decay*self.v+.5*h*acceleration
             u = self.u+h*half
