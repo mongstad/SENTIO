@@ -13,6 +13,10 @@ import numpy as np
 from .grid import DEFAULT_GRID, MAX_GRID, MAX_CHECKPOINT_BYTES
 
 
+# Operational ceiling shared with the sextic solver, not a real-time promise.
+MIN_STEP = 1e-6
+
+
 @dataclass(frozen=True)
 class Parameters:
     speed: float = 0.3
@@ -20,11 +24,15 @@ class Parameters:
     coupling: float = 2.0
 
     def __post_init__(self):
-        for name, low, high in (("speed", 0.01, 2.0), ("damping", 0.0, 10.0),
-                                ("coupling", 0.0, 20.0)):
+        for name in ("speed", "damping", "coupling"):
             value = getattr(self, name)
-            if not math.isfinite(value) or not low <= value <= high:
-                raise ValueError(f"{name} must be finite and in [{low}, {high}]")
+            positive = name == "speed"
+            if not math.isfinite(value) or value < 0 or (positive and value == 0):
+                domain = "strictly positive" if positive else "nonnegative"
+                raise ValueError(f"{name} must be finite and {domain}")
+        squared = self.speed * self.speed
+        if not math.isfinite(squared) or squared == 0:
+            raise ValueError("speed squared overflows or underflows float64")
 
 
 class Field:
@@ -40,6 +48,7 @@ class Field:
         self.n = n
         self.dx = 1.0 / (n - 1)
         self.parameters = parameters or Parameters()
+        self._wave_step(self.parameters)
         self.sponge = bool(sponge)
         self.u = np.zeros((n, n), dtype=np.float64)
         self.v = np.zeros_like(self.u)
@@ -54,10 +63,18 @@ class Field:
 
     @property
     def dt(self):
-        return min(1.0 / 240, 0.8 * self.dx / (math.sqrt(2) * self.parameters.speed))
+        return self._wave_step(self.parameters)
+
+    def _wave_step(self, parameters):
+        h = min(1.0 / 240, 0.8 * self.dx / (math.sqrt(2) * parameters.speed))
+        if not math.isfinite(h) or h < MIN_STEP:
+            raise ValueError(f"CFL-safe step {h:g} is below {MIN_STEP:g} s; "
+                             "requested configuration requires an infeasible step rate")
+        return h
 
     def configure(self, **changes):
         candidate = replace(self.parameters, **changes)
+        self._wave_step(candidate)
         self.parameters = candidate
 
     def laplacian(self, u):
@@ -79,9 +96,9 @@ class Field:
             if source.shape != self.u.shape or not np.isfinite(source).all() or np.max(np.abs(source)) > 1 + 1e-12:
                 raise ValueError("source must match grid, be finite, and lie in [-1,1]")
         p = self.parameters
-        force = 0.0 if source is None else p.coupling * source
         decay = np.exp(-0.5 * h * (p.damping + self._sponge))
         with np.errstate(over="ignore", invalid="ignore"):
+            force = 0.0 if source is None else p.coupling * source
             v_half = decay * self.v + 0.5 * h * (p.speed**2 * self.laplacian(self.u) + force)
             u = self.u + h * v_half
             self._edge_zero(u)
@@ -91,6 +108,8 @@ class Field:
             raise FloatingPointError("NaN/Inf detected; step rejected")
         if max(float(np.max(np.abs(u))), float(np.max(np.abs(v)))) > 1e6:
             raise FloatingPointError("amplitude/velocity safety limit 1e6 exceeded; step rejected")
+        if not math.isfinite(self.time + h) or self.time + h <= self.time:
+            raise FloatingPointError("unresolved simulation clock; step rejected")
         self.u, self.v = u, v
         self.time += h
         self.step_count += 1

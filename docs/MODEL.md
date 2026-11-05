@@ -19,7 +19,13 @@ v_t = c² Δu − (γ + σ(x,y)) v + κ S(x,y,t)
 u = v = 0 on the outer edge
 ```
 
-`Δ` is the five-point finite-difference Laplacian. Supported live ranges are `c ∈ [0.01,2]`, `γ ∈ [0,10]`, and `κ ∈ [0,20]`. Speed is domain lengths per model second; damping has inverse-model-second units; coupling multiplies the normalized input as acceleration. No nonlinear, learned, adaptive, recognition, or feedback term is present.
+`Δ` is the five-point finite-difference Laplacian. Live physical domains are finite
+`c > 0`, `γ ≥ 0`, and `κ ≥ 0`, subject to float64 representation and the step/state
+safeguards below. `c²` must be finite and nonzero. Nonnegative input gain preserves
+the accepted model's gain convention; the source itself supplies signed forcing.
+Speed is domain lengths per model second; damping has inverse-model-second units;
+coupling multiplies the normalized input as acceleration. The linear model has no
+nonlinear, learned, adaptive, recognition, or feedback term.
 
 The absorbing layer is a **sponge**, not an exact nonreflecting boundary. With `d` the distance in grid cells to the nearest edge and `w = 0.125(N−1)`, `σ = 40 max(0,1−d/w)²`. Waves are damped across the outer eighth of the domain before reaching the fixed wall. Some reflection and boundary resonances remain, especially at other speeds, frequencies, and incidence angles. The sponge-free fixed-wall model exists only for numerical control tests; the application and its checkpoints require the sponge.
 
@@ -36,7 +42,26 @@ vnew  = D [vhalf + (h/2)(c² Δunew + κ S)]
 
 Outer-edge values are forced to zero after each candidate update. The undamped 2D wave stability criterion is `c h/dx ≤ 1/√2`. Every step uses `h = min(1/240, 0.8 dx/(√2 c))`; smaller final steps are permitted in deterministic experiments. Thus the displayed CFL number never exceeds `0.8/√2 ≈ 0.565685`. Exact nonnegative damping does not impose an explicit damping-step restriction. Hot speed changes recompute the stable step without changing `u` or `v`.
 
-Unsupported, nonfinite, or out-of-range controls are rejected. Source arrays must be finite, grid-shaped, and in `[-1,1]`. Each candidate step is checked for NaN/Inf and a `1e6` magnitude/velocity guard before replacing the previous state. A fault pauses the field and is logged; resetting or restoring valid state is required before resuming. This guard is an operational safeguard, not proof of physical validity. Slow propagation with strong sustained forcing can produce large finite amplitudes; display saturation is reported separately.
+The old experimental parameter caps are removed. Both models reject a required
+step below **1e-6 model s** before committing a configuration, including constructor
+and checkpoint parameters. This extends sextic's existing operational ceiling of
+one million steps/model second to linear; it is not a throughput promise or an
+accuracy bound. More demanding accepted settings reduce the measured model-time
+rate; the runtime processes commands between individual steps and never attempts
+an unbounded catch-up batch. The GUI reports slowdown explicitly.
+
+Unsupported, nonfinite, unrepresentable or infeasible controls are rejected without
+changing the field or effective settings. Source arrays must be finite, grid-shaped,
+and in `[-1,1]`. Each candidate step is checked for NaN/Inf, a `1e6` magnitude/velocity
+guard and a representable advance of the model clock before replacing the previous
+state. A fault pauses the field and is logged; resetting or restoring valid state
+is required before resuming. Extreme finite gain may be accepted as a parameter
+but trigger this atomic step rejection under forcing. These guards are operational
+safeguards, not proof of physical validity. Slow propagation with strong sustained
+forcing can produce large finite amplitudes; display saturation is reported separately.
+Exact damping remains stable at very large γ, but splitting accuracy for strongly
+forced/overdamped dynamics still requires time-step refinement; finite output alone
+does not establish accuracy. See [control domains and evidence](ISSUE_4_CONTROLS.md).
 
 Grid changes do not loosen these limits. At c=.3, linear h is approximately
 0.00416667, 0.00369005, 0.00184322 at N=256/512/1024; sextic additionally limits
@@ -65,7 +90,15 @@ Three independent schedules are measured:
 
 - A capture thread owns the V4L2 descriptor and three requested MMAP buffers (bounded to at most eight if the driver adjusts the count). It drains available buffers and publishes the newest frame into a one-element mailbox. Driver sequence gaps, corrupted frames, drain discards, and overwritten mailbox frames have distinct counters. Preview and source are transient arrays.
 - A simulation thread targets one model second per wall second, choosing stable time steps independently of capture. It caps catch-up debt at 50 ms and reports skipped wall time under load, rather than increasing the numerical step. At expensive settings, simulation time can advance slower than wall time.
-- Qt polls the most recent field snapshot at roughly 30 Hz. Field snapshots, command queue (128 entries), capture mailbox, and energy history (600 scalar samples) are bounded. Pending controls wait for a simulation acknowledgement so stale snapshots cannot undo user changes.
+- Qt polls the most recent field snapshot at roughly 30 Hz. Field snapshots, command queue (128 entries), capture mailbox, and energy history (600 scalar samples) are bounded. Numeric drafts are separate from effective values. Enter submits a revision; the latest result per numeric key survives unrelated commands, and an acknowledgement never overwrites a newer draft. Focus loss, reset, restore and model transitions preserve unapplied drafts. Escape discards them. Physical and display-only controls are labeled separately.
+
+All fresh sessions use `c=.3, γ=.4, κ=2`, display range ±2, intensity 1, coupling on
+and running integration. No previous-session settings are loaded. Explicit model
+and grid CLI choices retain those recommendations; model transitions, seed controls
+and checkpoint restore keep their separately documented paused/uncoupled behavior.
+Display range `R` and intensity `I` must both be finite and positive, with finite,
+positive `R/I`. Rendering clips signed amplitude to ±`R/I` before division, avoiding
+intermediate overflow/underflow from `u*I/R`. No display control mutates `u` or `v`.
 
 Acquisition uses driver monotonic timestamps when supplied. Receipt-time fallback is visibly labeled because original frame age is then unknown. A two-second valid-frame timeout ends capture with an error; stale forcing has already expired after 250 ms. The field remains available. Reconnection requires restarting the application; automatic recovery is deferred.
 
