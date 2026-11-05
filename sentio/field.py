@@ -48,6 +48,7 @@ class Field:
         self.n = n
         self.dx = 1.0 / (n - 1)
         self.parameters = parameters or Parameters()
+        self.reinforcement = None  # absent by default; legacy solver/checkpoint path
         self._wave_step(self.parameters)
         self.sponge = bool(sponge)
         self.u = np.zeros((n, n), dtype=np.float64)
@@ -63,7 +64,25 @@ class Field:
 
     @property
     def dt(self):
-        return self._wave_step(self.parameters)
+        return self._reinforcement_step(self._wave_step(self.parameters))
+
+    def _reinforcement_step(self, h):
+        r = self.reinforcement
+        return min(h, r.parameters.step_bound) if r is not None and r.enabled else h
+
+    def _damping(self, h):
+        r = self.reinforcement
+        gamma = (r.damping(self.parameters.damping, h/2)
+                 if r is not None and r.enabled else self.parameters.damping)
+        return np.exp(-.5*h*(gamma+self._sponge))
+
+    def _reinforcement_candidate(self, u, v, h):
+        r = self.reinforcement
+        return r.propose(u, v, h) if r is not None and r.enabled else None
+
+    def _commit_reinforcement(self, candidate):
+        if candidate is not None:
+            self.reinforcement.commit(candidate)
 
     def _wave_step(self, parameters):
         h = min(1.0 / 240, 0.8 * self.dx / (math.sqrt(2) * parameters.speed))
@@ -96,7 +115,7 @@ class Field:
             if source.shape != self.u.shape or not np.isfinite(source).all() or np.max(np.abs(source)) > 1 + 1e-12:
                 raise ValueError("source must match grid, be finite, and lie in [-1,1]")
         p = self.parameters
-        decay = np.exp(-0.5 * h * (p.damping + self._sponge))
+        decay = self._damping(h)
         with np.errstate(over="ignore", invalid="ignore"):
             force = 0.0 if source is None else p.coupling * source
             v_half = decay * self.v + 0.5 * h * (p.speed**2 * self.laplacian(self.u) + force)
@@ -110,7 +129,9 @@ class Field:
             raise FloatingPointError("amplitude/velocity safety limit 1e6 exceeded; step rejected")
         if not math.isfinite(self.time + h) or self.time + h <= self.time:
             raise FloatingPointError("unresolved simulation clock; step rejected")
+        reinforcement = self._reinforcement_candidate(u, v, h)
         self.u, self.v = u, v
+        self._commit_reinforcement(reinforcement)
         self.time += h
         self.step_count += 1
 
@@ -131,9 +152,14 @@ class Field:
         self.v.fill(0)
         self.step_count = 0
         self.time = 0.0
+        if self.reinforcement is not None:
+            self.reinforcement.reset()
 
     def save(self, path):
         """Atomic, explicit checkpoint: no source frame or preview is stored."""
+        if self.reinforcement is not None:
+            from .reinforcement_checkpoint import save
+            return save(self, path)
         path = Path(path)
         metadata = dict(schema=1, n=self.n, parameters=asdict(self.parameters),
                         sponge=self.sponge, step=self.step_count, time=self.time,

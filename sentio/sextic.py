@@ -84,7 +84,7 @@ class SexticField(Field):
 
     @property
     def dt(self):
-        return self._step_bound(self.parameters, self.nonlinear)
+        return self._reinforcement_step(self._step_bound(self.parameters, self.nonlinear))
 
     def _validate_state(self, u, v, nonlinear=None):
         nonlinear = nonlinear or self.nonlinear
@@ -153,11 +153,16 @@ class SexticField(Field):
         self._validate_state(self.u, self.v)
         p, potential = self.parameters, self.nonlinear
         key = (h, p.damping)
-        if key != self._decay_key:
+        active = self.reinforcement is not None and self.reinforcement.enabled
+        if active:
+            decay = self._damping(h)
+            loss_weight = 1-decay**2
+        elif key != self._decay_key:
             self._decay = np.exp(-.5*h*(p.damping+self._sponge))
             self._loss_weight = 1-self._decay**2
             self._decay_key = key
-        decay = self._decay
+        if not active:
+            decay, loss_weight = self._decay, self._loss_weight
         with np.errstate(over="raise", invalid="raise", divide="raise"):
             force = 0.0 if source is None else p.coupling*source
             acceleration = p.speed**2*self.laplacian(self.u)+force-potential.gradient(self.u)
@@ -173,10 +178,12 @@ class SexticField(Field):
             work = self.input_work+(0.0 if source is None else
                     p.coupling*self.dx**2*float(np.sum(source*(u-self.u))))
             loss = self.damping_loss+.5*self.dx**2*float(np.sum(
-                self._loss_weight*(self.v**2+before_damping**2)))
+                loss_weight*(self.v**2+before_damping**2)))
         if not all(math.isfinite(x) for x in (work, loss, self.time+h)) or self.time+h <= self.time:
             raise FloatingPointError("nonfinite accounting or unresolved simulation clock; step rejected")
+        reinforcement = self._reinforcement_candidate(u, v, h)
         self.u, self.v, self.input_work, self.damping_loss = u, v, work, loss
+        self._commit_reinforcement(reinforcement)
         self.time += h
         self.step_count += 1
 
@@ -218,10 +225,15 @@ class SexticField(Field):
         self._edge_zero(self.u)
         self.v.fill(0)
         self.time, self.step_count = 0.0, 0
+        if self.reinforcement is not None:
+            self.reinforcement.reset()
         self.rebase_energy()
 
     def save(self, path):
         """Explicit schema-2 state, never readable as a legacy linear checkpoint."""
+        if self.reinforcement is not None:
+            from .reinforcement_checkpoint import save
+            return save(self, path)
         self._validate_state(self.u, self.v)
         self._energy(self.parameters, self.nonlinear)
         path = Path(path)

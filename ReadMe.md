@@ -27,6 +27,14 @@ also spreads broadly. This does not establish recognition or single-field memory
 The accepted application is unchanged. From the checkout, inspect both actual
 states with `python3 -m research.issue_10.viewer --model linear --activity source`.
 
+**Issue #11 adds optional event-counted reinforcement to the live application.**
+It counts separated local activity episodes with hysteresis and a capped gain,
+forgets slowly, and reduces actual local damping. Fresh launches keep it OFF.
+Expand **Experimental reinforcement controls…** to enable it, tune the threshold,
+event gain and forgetting rate, or show the separate fixed-scale strength map.
+This is an explicit second state, not recognition or evidence of single-field
+memory. See [equations, measured comparisons, checkpoints and owner verification](docs/ISSUE_11_REPETITION.md).
+
 ### Run on Fedora 44
 
 From this checkout, install the open-source CPU/Qt dependencies and first run the synthetic control:
@@ -76,6 +84,11 @@ The field uses blue for negative values, dark gray for zero, and orange for posi
 Changing the model resets the field and model parameters, pauses, and disables input coupling; explicitly enable coupling and uncheck Pause to continue. The display scale is retained for comparisons. All numeric controls, including ω/A, require Enter; focus loss never applies a draft. Rejected settings leave the solver unchanged, and the draft remains available for correction. The experimental validity envelope `|u|≤4A` is separate from display saturation. The **explicit Gaussian seed** button is a control experiment with γ=κ=0, paused and uncoupled; it is not camera-generated structure.
 
 Use **Save state** explicitly to save amplitude, velocity, model settings, and simulation clock. **Restore** validates the checkpoint and opens it paused with coupling off; enable coupling and resume when ready. No frame history is saved, and restoring cannot reproduce unrecorded camera stimuli. Normal window close stops acquisition and attempts to restore changed camera controls.
+
+When configured, reinforcement strength and its complete event-detector history
+are included in an explicit schema-3 checkpoint. Reset clears this history along
+with the wave; turning reinforcement OFF freezes it and restores baseline damping.
+Fresh OFF sessions continue using the accepted schema-1/2 checkpoint formats.
 
 Scalar-only JSONL logs are written under ignored `runs/`; checkpoints are also ignored by Git. Camera frames stay in memory. [Model and implementation](docs/MODEL.md), [experiments](docs/EXPERIMENTS.md), and [reference review](docs/REFERENCE_REVIEW.md) describe the assumptions and reproduction procedure.
 

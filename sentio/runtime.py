@@ -21,6 +21,7 @@ from .inputs import SYNTHETIC_MODES, luminance_source, synthetic_source
 from .models import MODEL_IDS, create_field, load_field, model_name
 from .grid import DEFAULT_GRID, GRID_SIZES, application_grid
 from .metrics import process_memory
+from .reinforcement import Reinforcement, ReinforcementParameters
 
 
 class EventLog:
@@ -41,6 +42,9 @@ class EventLog:
                           grid=field.n, dx=field.dx, domain_length=1.0,
                           model=model_name(field), model_id=MODEL_IDS[model_name(field)],
                           nonlinear=asdict(field.nonlinear) if hasattr(field, "nonlinear") else {})
+            r = field.reinforcement
+            record["reinforcement"] = (dict(enabled=r.enabled, parameters=asdict(r.parameters))
+                                       if r is not None else dict(enabled=False))
         with self.lock:
             self.file.write(json.dumps(record, allow_nan=False) + "\n")
             self.file.flush()
@@ -142,6 +146,7 @@ class Engine:
         self.display_range = 2.0
         self.intensity = 1.0
         self.preview_enabled = False
+        self.map_enabled = False
         self.command_revision = 0
         # Latest numeric result per key: bounded, and cannot be hidden by a
         # subsequent unrelated command before Qt polls the next snapshot.
@@ -164,6 +169,24 @@ class Engine:
         try:
             if name == "parameters":
                 self.field.configure(**value)
+            elif name == "reinforcement_enabled":
+                if self.field.reinforcement is None and value:
+                    self.field.reinforcement = Reinforcement(self.field.n)
+                elif self.field.reinforcement is not None:
+                    self.field.reinforcement.enabled = bool(value)
+            elif name == "reinforcement_parameters":
+                if not isinstance(value, dict):
+                    raise ValueError("reinforcement parameters must be a mapping")
+                if value.get("detector", "envelope") != "envelope":
+                    raise ValueError("The phase detector is a research comparator; the application uses envelope episodes")
+                r = self.field.reinforcement
+                if r is None:
+                    candidate = ReinforcementParameters(**value)
+                    self.field.reinforcement = Reinforcement(self.field.n, candidate, enabled=False)
+                else:
+                    r.configure(**value)
+            elif name == "map_enabled":
+                self.map_enabled = bool(value)
             elif name == "model":
                 if value == self.model:
                     raise ValueError("Model already active; use Reset field to clear its state")
@@ -200,6 +223,8 @@ class Engine:
                 self.field.save(value)
             elif name == "load":
                 loaded = load_field(value)
+                if loaded.reinforcement is not None and loaded.reinforcement.parameters.detector != "envelope":
+                    raise ValueError("Phase-detector checkpoints are research-only; the application requires envelope episodes")
                 if not loaded.sponge:
                     raise ValueError("Application checkpoints require sponge boundaries")
                 if loaded.n != self.field.n:
@@ -226,12 +251,14 @@ class Engine:
                 FloatingPointError, zipfile.BadZipFile) as exc:
             self.message = f"Rejected {name}: {exc}"
             self.log.write("control_rejected", self.field, name=name, error=str(exc))
-        keys = value.keys() if name == "parameters" and isinstance(value, dict) else (name,)
+        numeric = name in ("parameters", "reinforcement_parameters")
+        keys = value.keys() if numeric and isinstance(value, dict) else (name,)
         for key in keys:
-            if key in ("speed", "damping", "coupling", "omega", "amplitude", "display_range", "intensity"):
+            if key in ("speed", "damping", "coupling", "omega", "amplitude", "display_range", "intensity",
+                       "threshold", "gain", "forgetting"):
                 self.control_results[key] = dict(revision=self.command_revision, accepted=accepted,
                                                  message=self.message,
-                                                 value=(value[key] if name == "parameters" else value) if accepted else None)
+                                                 value=(value[key] if numeric else value) if accepted else None)
 
     def step(self, source=None):
         if self.paused:
@@ -335,6 +362,9 @@ class Runtime(threading.Thread):
                     rate_start, rate_steps, rate_time = now, 0, 0.0
                 if now >= next_publish:
                     diagnostics = engine.field.diagnostics()
+                    reinforcement = engine.field.reinforcement
+                    if reinforcement is not None:
+                        diagnostics["reinforcement"] = reinforcement.diagnostics(engine.field.parameters.damping)
                     if now >= next_log:
                         memory = process_memory()
                         history.append((engine.field.time, diagnostics["energy"]))
@@ -357,6 +387,11 @@ class Runtime(threading.Thread):
                                 skipped_wall_seconds=skipped_wall, history=list(history),
                                 display_range=engine.display_range, intensity=engine.intensity,
                                 preview_enabled=engine.preview_enabled,
+                                map_enabled=engine.map_enabled,
+                                reinforcement_enabled=reinforcement is not None and reinforcement.enabled,
+                                reinforcement_parameters=asdict(reinforcement.parameters if reinforcement is not None
+                                                                 else ReinforcementParameters()),
+                                m=(reinforcement.m.copy() if engine.map_enabled and reinforcement is not None else None),
                                 epoch=engine.epoch,
                                 command_revision=engine.command_revision,
                                 control_results=engine.control_results.copy(),

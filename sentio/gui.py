@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QLineEdit, QFileDialog,
 
 from .inputs import SYNTHETIC_MODES
 from .models import MODEL_LABELS
+from .reinforcement import ReinforcementParameters
 
 
 def signed_rgb(u, display_range, intensity):
@@ -38,6 +39,11 @@ def pixmap(rgb):
     rgb = np.ascontiguousarray(rgb)
     image = QImage(rgb.data, rgb.shape[1], rgb.shape[0], rgb.strides[0], QImage.Format.Format_RGB888).copy()
     return QPixmap.fromImage(image)
+
+
+def reinforcement_rgb(m):
+    """Actual strength, fixed 0…1 scale; independent of wave display controls."""
+    return (24 + np.clip(m, 0, 1)[..., None]*np.array([231, 176, 46])).astype(np.uint8)
 
 
 class EnergyPlot(QWidget):
@@ -233,6 +239,44 @@ class Window(QMainWindow):
         self.seed.setEnabled(runtime.engine.model == "sextic")
         self.seed.clicked.connect(lambda: self.send("seed"))
         right.addWidget(self.seed)
+        self.reinforcement_panel = QWidget()
+        reinforcement_layout = QVBoxLayout(self.reinforcement_panel)
+        self.reinforcement_toggle = QCheckBox("Enable event-counted local damping (experimental)")
+        self.reinforcement_toggle.toggled.connect(lambda v: self.send("reinforcement_enabled", v))
+        reinforcement_layout.addWidget(self.reinforcement_toggle)
+        explanation = QLabel("Explicit second state m, initially zero. One activity episode adds at most the event gain. "
+                             "OFF freezes m/detector and restores baseline damping. Reset clears wave and reinforcement. "
+                             "Times below are model time, not camera/wall time.")
+        explanation.setWordWrap(True)
+        reinforcement_layout.addWidget(explanation)
+        reinforcement_form = QFormLayout()
+        defaults = ReinforcementParameters()
+        for key, label in (("threshold", "Activity threshold (field units)"),
+                           ("gain", "Gain per event (0….05)"),
+                           ("forgetting", "Forgetting rate (1 / model s)")):
+            edit = NumericEdit(getattr(defaults, key))
+            edit.returnPressed.connect(lambda k=key: self.commit_numeric(k))
+            self.controls[key] = edit
+            cell = QVBoxLayout()
+            cell.addWidget(edit)
+            cell.addWidget(edit.feedback)
+            reinforcement_form.addRow(label, cell)
+        reinforcement_layout.addLayout(reinforcement_form)
+        self.map_toggle = QCheckBox("Show reinforcement m · dark 0 → gold 1 (display only)")
+        self.map_toggle.toggled.connect(lambda v: self.send("map_enabled", v))
+        reinforcement_layout.addWidget(self.map_toggle)
+        self.map_image = QLabel()
+        self.map_image.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        reinforcement_layout.addWidget(self.map_image)
+        self.reinforcement_status = QLabel()
+        self.reinforcement_status.setWordWrap(True)
+        reinforcement_layout.addWidget(self.reinforcement_status)
+        self.reinforcement_panel.setVisible(False)
+        self.reinforcement_details = QPushButton("Experimental reinforcement controls…")
+        self.reinforcement_details.setCheckable(True)
+        self.reinforcement_details.toggled.connect(self.reinforcement_panel.setVisible)
+        right.addWidget(self.reinforcement_details)
+        right.addWidget(self.reinforcement_panel)
         self.diagnostics = QLabel()
         self.diagnostics.setWordWrap(True)
         self.diagnostics.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -260,7 +304,7 @@ class Window(QMainWindow):
     def send(self, name, value=None):
         try:
             revision = self.runtime.submit(name, value)
-            for key in (value.keys() if name == "parameters" else (name,)):
+            for key in (value.keys() if name in ("parameters", "reinforcement_parameters") else (name,)):
                 self.pending[key] = revision
             return revision
         except queue.Full:
@@ -274,8 +318,11 @@ class Window(QMainWindow):
             edit.dirty = True
             edit.feedback.setText(f"Rejected: {exc} · effective {edit.effective!r}")
             return
-        revision = (self.send("parameters", {key: value}) if key in
-                    ("speed", "damping", "coupling", "omega", "amplitude") else self.send(key, value))
+        if key in ("threshold", "gain", "forgetting"):
+            revision = self.send("reinforcement_parameters", {key: value})
+        else:
+            revision = (self.send("parameters", {key: value}) if key in
+                        ("speed", "damping", "coupling", "omega", "amplitude") else self.send(key, value))
         if revision is not None:
             edit.pending = (revision, edit.generation)
             edit.feedback.setText(f"Applying {value!r}… · effective {edit.effective!r}")
@@ -332,12 +379,30 @@ class Window(QMainWindow):
                 widget.setEnabled(snap["model"] == "sextic")
                 if snap["model"] != "sextic":
                     continue
-            widget.synchronize(snap["parameters"].get(key, snap["nonlinear"].get(key, snap.get(key))),
+            widget.synchronize(snap["parameters"].get(key, snap["nonlinear"].get(key,
+                               snap["reinforcement_parameters"].get(key, snap.get(key)))),
                                snap["control_results"].get(key))
         for key, widget in (("paused", self.pause), ("coupling_enabled", self.coupling),
-                            ("preview_enabled", self.preview_toggle)):
+                            ("preview_enabled", self.preview_toggle),
+                            ("reinforcement_enabled", self.reinforcement_toggle), ("map_enabled", self.map_toggle)):
             if key not in self.pending:
                 self.sync(widget, snap[key])
+        self.map_image.setVisible(snap["map_enabled"])
+        if snap["map_enabled"]:
+            if snap["m"] is None:
+                self.map_image.setText("Reinforcement m = 0 everywhere (not enabled)")
+            else:
+                self.map_image.setPixmap(pixmap(reinforcement_rgb(snap["m"])).scaled(
+                    240, 240, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.FastTransformation))
+        r = d.get("reinforcement")
+        p = snap["reinforcement_parameters"]
+        description = (f"Detector: {p['detector']} · quiet {p['quiet_time']:g} s · spacing ≥ {p['refractory']:g} s\n"
+                       f"γ minimum = {p['floor']:g} × baseline damping · exponent {p['exponent']:g}\n")
+        self.reinforcement_status.setText(description + (
+            f"m mean {r['mean']:.4g} · max {r['maximum']:.4g} · coverage m≥.1 {100*r['coverage']:.2f}%\n"
+            f"Events/cell mean {r['events_mean']:.3g} · max {r['events_max']}\n"
+            f"Effective local γ {r['gamma_min']:.4g}…{r['gamma_max']:.4g} / s (plus sponge)"
+            if r else "OFF · no reinforcement state allocated"))
         state = "FAULT" if snap["fault"] else "PAUSED" if snap["paused"] else "FINITE"
         self.live_status.setText(
             f"{MODEL_LABELS[snap['model']]} · {state} · {snap['grid']}×{snap['grid']} field\n"

@@ -26,7 +26,7 @@ def headless(runtime, seconds, output=None):
             time.sleep(.1)
             snap = runtime.latest()
             if snap:
-                samples.append({k:v for k,v in snap.items() if k not in ("u", "preview", "history")})
+                samples.append({k:v for k,v in snap.items() if k not in ("u", "m", "preview", "history")})
     except KeyboardInterrupt:
         interrupted = True
     finally:
