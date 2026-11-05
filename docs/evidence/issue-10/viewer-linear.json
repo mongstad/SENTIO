@@ -1,0 +1,53 @@
+{
+  "metadata": {
+    "utc": "2026-11-05T20:54:56.366415+00:00",
+    "python": "3.14.10",
+    "numpy": "2.4.3",
+    "platform": "Linux-7.2.15-200.fc44.x86_64-x86_64-with-glibc2.43",
+    "random_seed": null,
+    "sample_interval": 0.1,
+    "baseline_commit": "2e7ecd7ff72b7dda9e89abbf93e3c31f0d92d6d0",
+    "source_sha256": {
+      "sentio/field.py": "a324753316f6bbdfd23ea085ba8f865d32879d24cb271264f1e5c3c540993496",
+      "sentio/sextic.py": "2e6cd650b34d2731e1d6150f181b0575dd12ba7d95f5118910c59fc8c6739f02",
+      "research/issue_10/__init__.py": "1fe21b2104f0210dd03b5c30a692796e98909943113a648cc9d795fa5a1c9ac2",
+      "research/issue_10/model.py": "e96500d86443721b14785b003a4c50f79d24999e2cbabc82a8844561e4722223",
+      "research/issue_10/experiments.py": "6904d924fbb1d949a29f7c67bdd57485a44d07afe744f71bf2a9ab411207c7e9",
+      "research/issue_10/viewer.py": "92d53cf5bdd71fb9765c93c89a224ba6992ce48445f651f143de830912a2790b",
+      "research/issue_10/checks.py": "3285fe40378f36d8c225e0f99e98122519695328ca02ee1a1aca4f6a5e543c00",
+      "research/issue_10/report_artifacts.py": "4d1fac6b57b6d58515fe8869e8ab37ea2e559b6500c0f5d3e34b24853176d461",
+      "research/issue_10/README.md": "31121aa5f038665792116134fa848657eb80e2f09936c8ea4828f42fa015bdf0"
+    }
+  },
+  "qt_platform": "wayland",
+  "visible": true,
+  "case": {
+    "model": "linear",
+    "activity": "source",
+    "enabled": true,
+    "history": "repeated",
+    "shape": "familiar",
+    "n": 65,
+    "timestep_factor": 1.0,
+    "sponge": true,
+    "eta": 2.0,
+    "decay": 0.02,
+    "alpha": 9.0,
+    "gamma_min": 0.02,
+    "duration": 13.0
+  },
+  "wall_seconds": 20.164739822997944,
+  "checks": [
+    "pause preserves u/v/m",
+    "training completes with evolving field and separately rendered map",
+    "both identical probes run from zero wave state with retained/erased training map",
+    "restart clears all state"
+  ],
+  "failure": "",
+  "probe_final_energy": {
+    "retained": 0.0002798006481125124,
+    "erased": 0.0002596622883631384
+  },
+  "limitations": "Automated Qt events; synthetic source only, no camera or physical keyboard testing.",
+  "timer_stopped": true
+}

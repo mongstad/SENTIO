@@ -20,6 +20,13 @@ feedback reports acceptance or rejection and the effective value. Drafts survive
 focus changes, refreshes and delayed replies; Escape discards a draft. See the
 [valid domains, safety policy and validation](docs/ISSUE_4_CONTROLS.md).
 
+[Issue #10 research](docs/ISSUE_10_REINFORCEMENT.md) adds an isolated, deterministic
+experiment with an explicit reinforcement map that changes local damping.
+Matched probes show history-dependent responses; nominal wave-driven reinforcement
+also spreads broadly. This does not establish recognition or single-field memory.
+The accepted application is unchanged. From the checkout, inspect both actual
+states with `python3 -m research.issue_10.viewer --model linear --activity source`.
+
 ### Run on Fedora 44
 
 From this checkout, install the open-source CPU/Qt dependencies and first run the synthetic control:
