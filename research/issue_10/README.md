@@ -86,3 +86,22 @@ full scalar curves and state hashes stay in ignored `runs/`. At most four
 ordinary numerical worker processes are used. Review summaries and fixed-scale
 figures are bounded; optional Matplotlib is only for scientific plots, as in
 issue #3, and is not an application dependency.
+
+## Explicit slower-rate follow-up
+
+After the first 116 comparisons, the nominal wave rule's fastest map relaxation
+time, 1/(eta+lambda) ≈ .495 s, was recognized as comparable to an omega=8 wave
+period. The nominal source rule's minimum time is about 1.92 s at S=.5.
+Neither nominal rule establishes a uniformly separated slow process.
+
+The `slow` suite therefore adds exactly eight N=65 repeated-history trials:
+both models and activity rules, eta=.05/.2, with every other nominal setting and
+protocol unchanged. Their fastest wave-map relaxation times are 14.3/4.55 s;
+source-map times are 30.8/14.3 s at the training peak. This is a declared follow-up,
+not a replacement or retuning of the original matrix. The unchanged numerical
+model and original protocols are preserved in commit `26fb05c`.
+
+The slow suite showed a larger retained/erased probe contrast for wave activity
+than at eta=2, so `slow_refine` adds eight validation trials at eta=.05: both
+models/rules with N=129 or half steps at N=65. It checks the newly observed effect
+without changing a stimulus, threshold, model equation, or nominal result.

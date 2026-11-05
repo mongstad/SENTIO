@@ -8,7 +8,7 @@ from pathlib import Path
 from .experiments import Case, run_case
 
 
-SUITES = ("matrix", "sweep", "refine", "full_grid", "long")
+SUITES = ("matrix", "sweep", "refine", "full_grid", "long", "slow", "slow_refine")
 
 
 def pick(data, suite="matrix", **where):
@@ -57,7 +57,7 @@ def figures(data, directory):
         for row in range(2):
             axes[row,col].grid(alpha=.2)
             axes[row,col].legend()
-    fig.suptitle("Matched repeated input, N=65, c=.3, γ₀=.4, κ=2\n"
+    fig.suptitle("Matched repeated input, N=65, c=.3, γ₀=.4, κ=2, η=2\n"
                  "Energy retention and reinforcement spread are distinct measurements",fontsize=12)
     save_figure(fig,directory/"decay-and-coverage.svg")
     fig.savefig(directory/"decay-and-coverage.png",dpi=130)
@@ -77,7 +77,7 @@ def figures(data, directory):
         ax.axhline(0,color="#222",ls="--")
         ax.set(title=model,ylim=(0,11),ylabel="Change in regional ∫E dt vs erased m (%)")
         ax.grid(axis="y",alpha=.2)
-    fig.suptitle("Same two-spot probe after explicitly zeroing u/v in both conditions\n"
+    fig.suptitle("Same two-spot probe after explicitly zeroing u/v in both conditions (η=2)\n"
                  "Left region was exposed; m continues to evolve during the 4 s probe",fontsize=12)
     save_figure(fig,directory/"matched-probe.svg")
     fig.savefig(directory/"matched-probe.png",dpi=130)
@@ -102,7 +102,7 @@ def figures(data, directory):
             ax.set(xlabel="x",ylabel="y")
     fig.colorbar(u,ax=axes[:,0],label="Field units; fixed ±0.025")
     fig.colorbar(m,ax=axes[:,1],label="Reinforcement; fixed 0..1")
-    fig.suptitle("Actual states at t=13: eight model seconds after input removal\n"
+    fig.suptitle("Actual states at t=13: eight model seconds after input removal (η=2)\n"
                  "Identical color limits across every row; disks mark measurement regions",fontsize=12)
     save_figure(fig,directory/"wave-and-map.svg")
     fig.savefig(directory/"wave-and-map.png",dpi=130)

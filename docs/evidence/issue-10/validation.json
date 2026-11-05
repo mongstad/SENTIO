@@ -1,0 +1,59 @@
+{
+  "tests": [
+    {
+      "label": "baseline",
+      "command": "python3 -m unittest discover -s tests -v",
+      "passed": 75,
+      "seconds": 8.971,
+      "skipped": 0,
+      "failed": 0,
+      "log": "runs/issue10/baseline-tests.log",
+      "sha256": "d03003164a968edf42c862d13adfd4bb172dde0e5ec8768d3e27d41bf9b97d6b"
+    },
+    {
+      "label": "final",
+      "command": "python3 -m unittest discover -s tests -v",
+      "passed": 87,
+      "seconds": 10.46,
+      "skipped": 0,
+      "failed": 0,
+      "log": "runs/issue10/final-tests.log",
+      "sha256": "d95eb3e18b7bf7a5d3b84a5e99cd8110e1c8881e74735ad0262b6a31fd9f4195"
+    },
+    {
+      "label": "system",
+      "command": "PYTHONNOUSERSITE=1 python3 -m unittest discover -s tests -v",
+      "passed": 87,
+      "seconds": 10.48,
+      "skipped": 0,
+      "failed": 0,
+      "log": "runs/issue10/final-system-tests.log",
+      "sha256": "a90e74cc304df0efab098c93aa96e8fa455a53a4d83b0d064a7d2116918e458c"
+    }
+  ],
+  "versions": {
+    "python": "3.14.10",
+    "numpy": "2.4.3",
+    "system_numpy": "2.4.6",
+    "pyside6": "6.11.2",
+    "matplotlib": "3.10.8"
+  },
+  "source_sha256": {
+    "research/issue_10/__init__.py": "1fe21b2104f0210dd03b5c30a692796e98909943113a648cc9d795fa5a1c9ac2",
+    "research/issue_10/model.py": "e96500d86443721b14785b003a4c50f79d24999e2cbabc82a8844561e4722223",
+    "research/issue_10/experiments.py": "170a491eb6fe8417ee05a3c3905a131016b42db378d1b92f34c8e56abf15493e",
+    "research/issue_10/viewer.py": "92d53cf5bdd71fb9765c93c89a224ba6992ce48445f651f143de830912a2790b",
+    "research/issue_10/checks.py": "3285fe40378f36d8c225e0f99e98122519695328ca02ee1a1aca4f6a5e543c00",
+    "research/issue_10/report_artifacts.py": "67242b097dbb5ebf8adc98afade25c29197ed459d0c1c28c55aa7ce759724348",
+    "tests/test_issue10_research.py": "17698015e9ef4f78cbac2f0222bdca90856b6b6474d32a27af60c84249b0f9fe",
+    "tests/test_issue10_viewer.py": "5b06e470673e6873eb306fb79bd8489be7bdc35e67221d6b46179086ad9d38f7"
+  },
+  "checks": [
+    "compileall passed",
+    "git diff --check passed",
+    "all numerical suites use identical accepted and research core hashes",
+    "figure replay matches all four recorded final state hashes",
+    "visible viewer source hash matches native smoke reports"
+  ],
+  "limitations": "Synthetic-only research. Numerical suite metadata preserves actual collection versions; later changes add slower-rate suites/reporting, not different core equations."
+}

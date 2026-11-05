@@ -175,6 +175,13 @@ def cases_for(suite):
         return [replace(base, n=256) for base in nominal]
     if suite == "long":
         return [replace(base, duration=60) for base in nominal if base.enabled]
+    if suite == "slow":
+        # Explicit follow-up after the first matrix: a separated slower map,
+        # without changing the nominal runs or selecting a more favorable shape.
+        return [replace(base, eta=eta) for base in nominal if base.enabled for eta in (.05,.2)]
+    if suite == "slow_refine":
+        return [replace(base, eta=.05, **change) for base in nominal if base.enabled
+                for change in ({"n":129}, {"timestep_factor":.5})]
     raise ValueError("unknown suite")
 
 
@@ -193,7 +200,7 @@ def execute(case):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--suite", choices=("matrix", "sweep", "refine", "full_grid", "long"), required=True)
+    parser.add_argument("--suite", choices=("matrix", "sweep", "refine", "full_grid", "long", "slow", "slow_refine"), required=True)
     parser.add_argument("--workers", type=int, choices=range(1, 5), default=1)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
