@@ -1,0 +1,348 @@
+{
+  "provenance": {
+    "base": "b801d313d6fbcb7fbc27e23ea1c076293b774879",
+    "python": "3.14.10",
+    "numpy": "2.4.3",
+    "platform": "Linux-7.2.15-200.fc44.x86_64-x86_64-with-glibc2.43",
+    "files": {
+      "sentio/field.py": "abe9b6c9af65487e289e077353d4ad90f59ffa0bb34a3efff6345ccea0370b45",
+      "sentio/sextic.py": "67c5312ad3f845e5da75ef96ce815a28de5c81a68b8897bca04f43948b6ff93d",
+      "sentio/reinforcement.py": "2e8e58e843094cd8378584d7f1828633ac0f295e3e038b0efbd7a54788e0471c",
+      "research/issue_11/experiments.py": "5b407d36bb6b632c835ae2a186dc1bdaa273719f7a322030853f9dad0ca6e3eb"
+    },
+    "noise_seed": 20261105
+  },
+  "checks_source_sha256": "dd2b02cbfcad9014dfb984355b8720cb6ebbc8e73f3b5d06b3cad41edfae22a3",
+  "detectors": {
+    "held": [
+      {
+        "amplitude": 0.006,
+        "h": 0.01,
+        "events": 1,
+        "m": 0.02
+      },
+      {
+        "amplitude": 0.006,
+        "h": 0.005,
+        "events": 1,
+        "m": 0.02
+      },
+      {
+        "amplitude": 0.06,
+        "h": 0.01,
+        "events": 1,
+        "m": 0.02
+      },
+      {
+        "amplitude": 0.06,
+        "h": 0.005,
+        "events": 1,
+        "m": 0.02
+      },
+      {
+        "amplitude": 6000,
+        "h": 0.01,
+        "events": 1,
+        "m": 0.02
+      },
+      {
+        "amplitude": 6000,
+        "h": 0.005,
+        "events": 1,
+        "m": 0.02
+      }
+    ],
+    "episodes": [
+      {
+        "period": 0.7,
+        "h": 0.01,
+        "amplitude": 0.006,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "period": 0.7,
+        "h": 0.01,
+        "amplitude": 0.06,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "period": 0.7,
+        "h": 0.005,
+        "amplitude": 0.006,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "period": 0.7,
+        "h": 0.005,
+        "amplitude": 0.06,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "period": 1.0,
+        "h": 0.01,
+        "amplitude": 0.006,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "period": 1.0,
+        "h": 0.01,
+        "amplitude": 0.06,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "period": 1.0,
+        "h": 0.005,
+        "amplitude": 0.006,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "period": 1.0,
+        "h": 0.005,
+        "amplitude": 0.06,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "period": 2.0,
+        "h": 0.01,
+        "amplitude": 0.006,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "period": 2.0,
+        "h": 0.01,
+        "amplitude": 0.06,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "period": 2.0,
+        "h": 0.005,
+        "amplitude": 0.006,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "period": 2.0,
+        "h": 0.005,
+        "amplitude": 0.06,
+        "events": 8,
+        "m": 0.14923697741821443
+      }
+    ],
+    "continuous": [
+      {
+        "detector": "envelope",
+        "frequency": 0.25,
+        "h": 0.01,
+        "events": 1,
+        "m": 0.02
+      },
+      {
+        "detector": "envelope",
+        "frequency": 0.25,
+        "h": 0.005,
+        "events": 1,
+        "m": 0.02
+      },
+      {
+        "detector": "envelope",
+        "frequency": 0.5,
+        "h": 0.01,
+        "events": 1,
+        "m": 0.02
+      },
+      {
+        "detector": "envelope",
+        "frequency": 0.5,
+        "h": 0.005,
+        "events": 1,
+        "m": 0.02
+      },
+      {
+        "detector": "envelope",
+        "frequency": 1.0,
+        "h": 0.01,
+        "events": 1,
+        "m": 0.02
+      },
+      {
+        "detector": "envelope",
+        "frequency": 1.0,
+        "h": 0.005,
+        "events": 1,
+        "m": 0.02
+      },
+      {
+        "detector": "phase",
+        "frequency": 0.25,
+        "h": 0.01,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "detector": "phase",
+        "frequency": 0.25,
+        "h": 0.005,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "detector": "phase",
+        "frequency": 0.5,
+        "h": 0.01,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "detector": "phase",
+        "frequency": 0.5,
+        "h": 0.005,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "detector": "phase",
+        "frequency": 1.0,
+        "h": 0.01,
+        "events": 8,
+        "m": 0.14923697741821443
+      },
+      {
+        "detector": "phase",
+        "frequency": 1.0,
+        "h": 0.005,
+        "events": 8,
+        "m": 0.14923697741821443
+      }
+    ],
+    "saturation": [
+      {
+        "count": 1,
+        "h": 0.01,
+        "expected": 0.020000000000000018,
+        "events": 1,
+        "m": 0.02
+      },
+      {
+        "count": 10,
+        "h": 0.01,
+        "expected": 0.1829271931124533,
+        "events": 10,
+        "m": 0.18292719311245315
+      },
+      {
+        "count": 100,
+        "h": 0.01,
+        "expected": 0.8673804441052471,
+        "events": 100,
+        "m": 0.867380444105247
+      },
+      {
+        "count": 1000,
+        "h": 0.01,
+        "expected": 0.9999999983170327,
+        "events": 1000,
+        "m": 0.9999999983170326
+      }
+    ],
+    "forgetting": [
+      {
+        "h": 0.01,
+        "duration": 20,
+        "expected": 0.7238699344287677,
+        "actual": 0.7238699344287078,
+        "absolute_error": 5.984102102729594e-14
+      },
+      {
+        "h": 0.005,
+        "duration": 20,
+        "expected": 0.7238699344287677,
+        "actual": 0.7238699344288368,
+        "absolute_error": 6.916689443414725e-14
+      }
+    ]
+  },
+  "baseline": {
+    "commit": "b801d313d6fbcb7fbc27e23ea1c076293b774879",
+    "source_sha256": {
+      "field": "a324753316f6bbdfd23ea085ba8f865d32879d24cb271264f1e5c3c540993496",
+      "sextic": "2e6cd650b34d2731e1d6150f181b0575dd12ba7d95f5118910c59fc8c6739f02",
+      "grid": "a751d2cb05eaee22e22cc69ad27e12e9a9a7e8e7cb4a2354d05b3b4895cca62d"
+    },
+    "runs": [
+      {
+        "model": "Field",
+        "n": 33,
+        "allocated_disabled": false,
+        "steps": 120,
+        "arrays_clock_diagnostics_exact": true,
+        "legacy_checkpoint_exact": true
+      },
+      {
+        "model": "Field",
+        "n": 33,
+        "allocated_disabled": true,
+        "steps": 120,
+        "arrays_clock_diagnostics_exact": true,
+        "legacy_checkpoint_exact": true
+      },
+      {
+        "model": "Field",
+        "n": 256,
+        "allocated_disabled": false,
+        "steps": 120,
+        "arrays_clock_diagnostics_exact": true,
+        "legacy_checkpoint_exact": true
+      },
+      {
+        "model": "Field",
+        "n": 256,
+        "allocated_disabled": true,
+        "steps": 120,
+        "arrays_clock_diagnostics_exact": true,
+        "legacy_checkpoint_exact": true
+      },
+      {
+        "model": "SexticField",
+        "n": 33,
+        "allocated_disabled": false,
+        "steps": 120,
+        "arrays_clock_diagnostics_exact": true,
+        "legacy_checkpoint_exact": true
+      },
+      {
+        "model": "SexticField",
+        "n": 33,
+        "allocated_disabled": true,
+        "steps": 120,
+        "arrays_clock_diagnostics_exact": true,
+        "legacy_checkpoint_exact": true
+      },
+      {
+        "model": "SexticField",
+        "n": 256,
+        "allocated_disabled": false,
+        "steps": 120,
+        "arrays_clock_diagnostics_exact": true,
+        "legacy_checkpoint_exact": true
+      },
+      {
+        "model": "SexticField",
+        "n": 256,
+        "allocated_disabled": true,
+        "steps": 120,
+        "arrays_clock_diagnostics_exact": true,
+        "legacy_checkpoint_exact": true
+      }
+    ]
+  }
+}

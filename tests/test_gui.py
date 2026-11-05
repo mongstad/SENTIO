@@ -11,7 +11,7 @@ import numpy as np
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
-from sentio.gui import NumericEdit, Window, signed_rgb
+from sentio.gui import NumericEdit, Window, signed_rgb, reinforcement_rgb
 from sentio.runtime import Runtime
 
 
@@ -49,6 +49,61 @@ class GuiTests(unittest.TestCase):
         np.testing.assert_array_equal(rgb[0, 4], [255, 127, 51])
         np.testing.assert_array_equal(rgb[0, 0], rgb[0, 1])
         np.testing.assert_array_equal(u, before)
+
+    def test_reinforcement_map_and_controls_preserve_drafts_and_physics(self):
+        m = np.array([[0., .5, 1.]])
+        before = m.copy()
+        rgb = reinforcement_rgb(m)
+        np.testing.assert_array_equal(rgb[0, 0], [24, 24, 24])
+        np.testing.assert_array_equal(rgb[0, 2], [255, 200, 70])
+        np.testing.assert_array_equal(m, before)
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = Runtime(log_path=Path(directory)/"reinforcement.jsonl")
+            runtime.engine.paused = True
+            window = Window(runtime)
+            runtime.start()
+            window.show()
+            try:
+                self.wait_for(lambda: runtime.latest() is not None)
+                self.assertFalse(window.reinforcement_panel.isVisible())
+                self.assertFalse(runtime.latest()["reinforcement_enabled"])
+                window.reinforcement_details.click()
+                window.reinforcement_toggle.setChecked(True)
+                window.map_toggle.setChecked(True)
+                self.wait_for(lambda: runtime.latest()["m"] is not None)
+                self.wait_for(lambda: window.map_image.pixmap() is not None and not window.map_image.pixmap().isNull())
+                gain = window.controls["gain"]
+                self.type_value(gain, ".03")
+                self.wait_for(lambda: gain.pending is None)
+                self.assertEqual(gain.effective, .03)
+                self.type_value(gain, ".2")
+                self.wait_for(lambda: gain.pending is None)
+                self.assertIn("Rejected", gain.feedback.text())
+                self.assertEqual(gain.text(), ".2")
+                before = runtime.latest()["u"].copy()
+                window.map_toggle.setChecked(False)
+                self.type_value(window.controls["display_range"], .01)
+                self.wait_for(lambda: runtime.latest()["display_range"] == .01)
+                np.testing.assert_array_equal(runtime.latest()["u"], before)
+                path = str(Path(directory)/"reinforced.npz")
+                window.send("save", path)
+                self.wait_for(lambda: Path(path).exists())
+                window.reinforcement_toggle.setChecked(False)
+                self.wait_for(lambda: not runtime.latest()["reinforcement_enabled"])
+                window.send("load", path)
+                self.wait_for(lambda: runtime.latest()["reinforcement_enabled"])
+                self.wait_for(lambda: window.reinforcement_toggle.isChecked())
+                self.assertTrue(runtime.latest()["paused"])
+                self.assertFalse(runtime.latest()["coupling_enabled"])
+                self.assertEqual(gain.text(), ".2")
+                window.send("model", "sextic")
+                self.wait_for(lambda: runtime.latest()["model"] == "sextic")
+                self.assertFalse(runtime.latest()["reinforcement_enabled"])
+                self.assertEqual(gain.text(), ".2")
+            finally:
+                window.close()
+                self.app.processEvents()
+            self.assertFalse(runtime.failure)
 
     def test_large_grid_colors_match_original_mapping_exactly(self):
         u = np.random.default_rng(8).uniform(-.5, .5, (1024, 1024))

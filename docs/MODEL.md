@@ -7,6 +7,12 @@ its controls, model transitions, checkpoint dispatch and measured performance.
 The owner's PR #7 update authorizes this scoped nonlinear extension and minimal
 controls before issue #4; the linear integrator and capture format are unchanged.
 
+Issue #11 adds [optional event-counted local damping](ISSUE_11_REPETITION.md) to
+both models, default OFF. It introduces an explicit second state m, detector
+timers/latches, bounded event gains and exponential forgetting. The equations and
+integration below describe the accepted OFF path; the linked guide specifies the
+enabled damping, sampling bounds, schema-3 state and measured limitations.
+
 ## Dynamics and units
 
 The domain is the dimensionless unit square, with N×N nodes including fixed outer-edge nodes. N defaults to 256; `--grid 512` and `--grid 1024` are also supported. Resolution is fixed for a session, requiring a restart to change. Grid spacing is `dx = 1/(N-1)`; the physical domain and sponge thickness remain unchanged across resolutions. Amplitude `u` and aligned-time velocity `v = du/dt` are float64 arrays initialized to zero. Simulation time is measured in model seconds, not camera exposures.
@@ -24,7 +30,7 @@ u = v = 0 on the outer edge
 safeguards below. `c²` must be finite and nonzero. Nonnegative input gain preserves
 the accepted model's gain convention; the source itself supplies signed forcing.
 Speed is domain lengths per model second; damping has inverse-model-second units;
-coupling multiplies the normalized input as acceleration. The linear model has no
+coupling multiplies the normalized input as acceleration. With reinforcement OFF, the linear model has no
 nonlinear, learned, adaptive, recognition, or feedback term.
 
 The absorbing layer is a **sponge**, not an exact nonreflecting boundary. With `d` the distance in grid cells to the nearest edge and `w = 0.125(N−1)`, `σ = 40 max(0,1−d/w)²`. Waves are damped across the outer eighth of the domain before reaching the fixed wall. Some reflection and boundary resonances remain, especially at other speeds, frequencies, and incidence angles. The sponge-free fixed-wall model exists only for numerical control tests; the application and its checkpoints require the sponge.
@@ -82,7 +88,7 @@ pixels. It can expose pixel boundaries more sharply but adds no measured camera
 detail. It does not interpolate an inferred high-resolution image. Sources are
 still held in a one-element mailbox, with no recording or frame-history buffer.
 
-Every incoming source contributes acceleration to the existing state. It never writes the amplitude or velocity arrays. Between frames the most recent fresh source is held. At an age above 250 ms, or on capture failure, the source becomes zero while the field continues. Disabling coupling also sets forcing to zero without clearing the field. Constant brightness can drive a DC response; recurring patterns may reflect forcing, ringing, and boundaries. No frame history or artificial memory is implemented.
+Every incoming source contributes acceleration to the existing state. It never writes the amplitude or velocity arrays. Between frames the most recent fresh source is held. At an age above 250 ms, or on capture failure, the source becomes zero while the field continues. Disabling coupling also sets forcing to zero without clearing the field. Constant brightness can drive a DC response; recurring patterns may reflect forcing, ringing, and boundaries. No frame history is stored. Optional reinforcement observes the simulated wave, not source frames; its explicit history is absent by default.
 
 ## Timing and capture lifecycle
 

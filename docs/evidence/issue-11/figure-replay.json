@@ -1,0 +1,73 @@
+{
+  "matplotlib": "3.10.8",
+  "runs": [
+    {
+      "case": {
+        "model": "linear",
+        "kind": "repeated",
+        "detector": "envelope",
+        "enabled": true,
+        "n": 33,
+        "factor": 1.0,
+        "amplitude": 0.25,
+        "spacing": 4.0,
+        "pulses": 16,
+        "frequency": 1.0,
+        "mode": 1,
+        "sponge": true
+      },
+      "arrays_exact": true
+    },
+    {
+      "case": {
+        "model": "linear",
+        "kind": "shock",
+        "detector": "envelope",
+        "enabled": true,
+        "n": 33,
+        "factor": 1.0,
+        "amplitude": 0.25,
+        "spacing": 4.0,
+        "pulses": 16,
+        "frequency": 1.0,
+        "mode": 1,
+        "sponge": true
+      },
+      "arrays_exact": true
+    },
+    {
+      "case": {
+        "model": "sextic",
+        "kind": "repeated",
+        "detector": "envelope",
+        "enabled": true,
+        "n": 33,
+        "factor": 1.0,
+        "amplitude": 0.25,
+        "spacing": 4.0,
+        "pulses": 16,
+        "frequency": 1.0,
+        "mode": 1,
+        "sponge": true
+      },
+      "arrays_exact": true
+    },
+    {
+      "case": {
+        "model": "sextic",
+        "kind": "shock",
+        "detector": "envelope",
+        "enabled": true,
+        "n": 33,
+        "factor": 1.0,
+        "amplitude": 0.25,
+        "spacing": 4.0,
+        "pulses": 16,
+        "frequency": 1.0,
+        "mode": 1,
+        "sponge": true
+      },
+      "arrays_exact": true
+    }
+  ]
+}

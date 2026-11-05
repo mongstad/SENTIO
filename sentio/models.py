@@ -24,10 +24,13 @@ def model_name(field):
     return "sextic" if isinstance(field, SexticField) else "linear"
 
 
-def load_field(path):
+def load_field(path, *, allow_reinforcement=True):
     # Inspect only a bounded scalar header before invoking the model's full
     # validator. Never infer a model from arrays or reinterpret their state.
     with zipfile.ZipFile(path) as archive:
+        if allow_reinforcement and "schema.json" in archive.namelist():
+            from .reinforcement_checkpoint import load
+            return load(path)
         if (len(archive.infolist()) != 3
                 or set(archive.namelist()) != {"u.npy", "v.npy", "metadata.npy"}
                 or sum(i.file_size for i in archive.infolist()) > MAX_CHECKPOINT_BYTES):
