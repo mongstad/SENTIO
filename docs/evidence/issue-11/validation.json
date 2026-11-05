@@ -28,7 +28,7 @@
     "result": "passed"
   },
   "compileall": "passed",
-  "diff_check": "passed",
+  "diff_check": "passed after normalizing generated SVG trailing whitespace; initial staged check exposed the formatter output",
   "coupled_trials": 50,
   "matched_probes": 100,
   "guard_stops": 0,
@@ -65,7 +65,7 @@
     "sentio/reinforcement_checkpoint.py": "76cdb9d563c4872bb81b0dae4438bfd06c9e3460b0c78ba33fe6c236829be88c",
     "research/issue_11/experiments.py": "5b407d36bb6b632c835ae2a186dc1bdaa273719f7a322030853f9dad0ca6e3eb",
     "research/issue_11/checks.py": "dd2b02cbfcad9014dfb984355b8720cb6ebbc8e73f3b5d06b3cad41edfae22a3",
-    "research/issue_11/report.py": "efdb52b36118c655487918532de4327ab19279069528f2cd5a43a08b4e530238",
+    "research/issue_11/report.py": "49ea392355484e39983a8035543f132abcc53645f8ae17fb3736c0a0407c99c8",
     "research/issue_11/throughput.py": "593343b21f3d9ec39d6087c1131ee4a16897a2832ff528f4875a59ac1cb94a1a",
     "tests/test_reinforcement.py": "ff64d035a230c0e50d712ab823a6983c11f27c7f272908d683900250088fae0c",
     "tests/test_gui.py": "4f0ca36b9bd10b16a6300f37baf4c37b30a1ce62f7b28f59c0eaf451764d4250",

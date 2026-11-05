@@ -86,6 +86,10 @@ def main():
             axes[i,j].legend(fontsize=8);axes[i,j].grid(alpha=.2)
     fig.suptitle('Identical initial velocity probes, no forcing; event gain zero\nLocal energy also changes through propagation across region boundaries')
     fig.savefig(args.output/'probe-decay.svg');fig.savefig(args.input/'probe-decay.png',dpi=150);plt.close(fig)
+    # Matplotlib emits trailing spaces in SVG path attributes. Newlines still
+    # separate coordinates; normalize these generated files for Git review.
+    for path in args.output.glob('*.svg'):
+        path.write_text('\n'.join(line.rstrip() for line in path.read_text().splitlines())+'\n')
     (args.output/'figure-replay.json').write_text(json.dumps(dict(matplotlib=matplotlib.__version__,runs=replay),indent=2)+'\n')
     print(json.dumps(dict(cases=len(results),summary_bytes=destination.stat().st_size,figure_replays=len(replay))))
 
